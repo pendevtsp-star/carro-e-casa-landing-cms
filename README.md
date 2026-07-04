@@ -45,6 +45,8 @@ AUTH_SECRET="uma-chave-segura-com-32-caracteres-ou-mais"
 ADMIN_SEED_EMAIL="admin@lojacarroecasa.com.br"
 ADMIN_SEED_PASSWORD="troque-esta-senha"
 UPLOAD_DIR="./uploads"
+GOOGLE_PLACES_API_KEY=""
+GOOGLE_PLACE_ID=""
 ```
 
 4. Suba um PostgreSQL local ou use Docker:

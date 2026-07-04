@@ -1,6 +1,6 @@
 import { deleteBrand, saveBrand } from "@/app/admin/actions";
 import { AdminPage } from "@/components/admin/admin-page";
-import { FormCheckbox, FormInput, FormTextarea } from "@/components/admin/form-input";
+import { FormCheckbox, FormFile, FormInput, FormTextarea } from "@/components/admin/form-input";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { requireCapability } from "@/lib/admin-auth";
@@ -36,7 +36,17 @@ function BrandForm({ brand }: { brand?: Awaited<ReturnType<typeof getBrands>>[nu
       <div className="grid gap-4 md:grid-cols-2">
         <FormInput label="Nome" name="name" defaultValue={brand?.name} required />
         <FormInput label="Ordem" name="order" type="number" defaultValue={brand?.order ?? 0} required />
-        <FormInput label="Logo" name="logoUrl" defaultValue={brand?.logoUrl} help="Use URL de mídia enviada. Deixe em branco para placeholder elegante." />
+        <FormFile
+          label="Upload da logo"
+          name="logoFile"
+          help="Opcional. Se enviar um arquivo, ele substitui o link abaixo automaticamente."
+        />
+        <FormInput
+          label="Link da logo"
+          name="logoUrl"
+          defaultValue={brand?.logoUrl}
+          help="Use URL de mídia enviada ou deixe em branco para placeholder elegante."
+        />
         <FormInput label="Link oficial" name="officialUrl" defaultValue={brand?.officialUrl} />
         <FormTextarea className="md:col-span-2" label="Descrição curta" name="description" defaultValue={brand?.description} rows={3} />
       </div>

@@ -1,6 +1,6 @@
 import { deleteCarouselSlide, saveCarouselSlide } from "@/app/admin/actions";
 import { AdminPage } from "@/components/admin/admin-page";
-import { FormCheckbox, FormInput, FormTextarea } from "@/components/admin/form-input";
+import { FormCheckbox, FormFile, FormInput, FormTextarea } from "@/components/admin/form-input";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { requireCapability } from "@/lib/admin-auth";
@@ -18,7 +18,17 @@ function SlideForm({ slide }: { slide?: Awaited<ReturnType<typeof getCarouselSli
         <FormInput label="Título" name="title" defaultValue={slide?.title} required />
         <FormInput label="Ordem" name="order" type="number" defaultValue={slide?.order ?? 0} required />
         <FormTextarea className="md:col-span-2" label="Subtítulo" name="subtitle" defaultValue={slide?.subtitle} rows={3} required />
-        <FormInput label="Imagem" name="imageUrl" defaultValue={slide?.imageUrl} required />
+        <FormFile
+          label="Upload da imagem"
+          name="imageFile"
+          help="Opcional. Se enviar um arquivo, ele substitui o link abaixo automaticamente."
+        />
+        <FormInput
+          label="Link da imagem"
+          name="imageUrl"
+          defaultValue={slide?.imageUrl}
+          help="Você ainda pode colar uma URL já enviada na biblioteca de mídia."
+        />
         <FormInput label="Texto alternativo" name="imageAlt" defaultValue={slide?.imageAlt} required />
         <FormInput label="Texto do botão" name="buttonLabel" defaultValue={slide?.buttonLabel} />
         <FormInput label="Link do botão" name="buttonUrl" defaultValue={slide?.buttonUrl} />

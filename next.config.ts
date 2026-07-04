@@ -21,6 +21,12 @@ const nextConfig: NextConfig = {
         pathname: "/media/**",
       },
     ],
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "**.googleusercontent.com",
+      },
+    ],
   },
 };
 

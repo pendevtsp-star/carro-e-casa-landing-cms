@@ -89,6 +89,33 @@ export function FormCheckbox({
   );
 }
 
+export function FormFile({
+  label,
+  name,
+  help,
+  accept = "image/*",
+  className,
+}: {
+  label: string;
+  name: string;
+  help?: string;
+  accept?: string;
+  className?: string;
+}) {
+  return (
+    <label className={cn("grid gap-2", className)}>
+      <span className="text-sm font-semibold text-brand-dark">{label}</span>
+      <input
+        name={name}
+        type="file"
+        accept={accept}
+        className="rounded-md border border-brand-dark/12 bg-white px-3 py-2 text-sm text-brand-dark shadow-sm transition file:mr-3 file:rounded-md file:border-0 file:bg-brand file:px-3 file:py-2 file:text-sm file:font-semibold file:text-brand-dark focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/25"
+      />
+      {help ? <span className="text-xs leading-5 text-brand-dark/55">{help}</span> : null}
+    </label>
+  );
+}
+
 export function FormSelect({
   label,
   name,

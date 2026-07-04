@@ -35,6 +35,62 @@ function redirectSaved(pathname: string) {
   redirect(`${pathname}?saved=1`);
 }
 
+async function saveImageFromForm(file: FormDataEntryValue | null, altText?: string | null) {
+  if (!(file instanceof File) || file.size === 0) {
+    return null;
+  }
+
+  const maxMb = Number(process.env.MAX_UPLOAD_MB || 5);
+  const maxBytes = maxMb * 1024 * 1024;
+  if (file.size > maxBytes) {
+    throw new Error(`A imagem deve ter até ${maxMb} MB.`);
+  }
+
+  const allowedTypes = new Set(["image/jpeg", "image/png", "image/webp", "image/avif"]);
+  if (!allowedTypes.has(file.type)) {
+    throw new Error("Use JPG, PNG, WebP ou AVIF.");
+  }
+
+  const uploadRoot = getUploadRoot();
+  await mkdir(uploadRoot, { recursive: true });
+
+  const extension =
+    file.type === "image/png"
+      ? "png"
+      : file.type === "image/webp"
+        ? "webp"
+        : file.type === "image/avif"
+          ? "avif"
+          : "jpg";
+  const fileName = `${Date.now()}-${nanoid(10)}.${extension}`;
+  const absolutePath = `${uploadRoot}/${fileName}`;
+  const buffer = Buffer.from(await file.arrayBuffer());
+  let metadata: { width?: number; height?: number } = {};
+  try {
+    const sharp = (await import("sharp")).default;
+    metadata = await sharp(buffer).metadata();
+  } catch {
+    metadata = {};
+  }
+
+  await writeFile(absolutePath, buffer);
+
+  const asset = await prisma.mediaAsset.create({
+    data: {
+      originalName: file.name,
+      fileName,
+      url: `/media/${fileName}`,
+      mimeType: file.type,
+      size: file.size,
+      width: metadata.width,
+      height: metadata.height,
+      altText: emptyToNull(altText ?? null),
+    },
+  });
+
+  return asset.url;
+}
+
 export async function loginAction(
   _: ActionState,
   formData: FormData,
@@ -186,10 +242,15 @@ export async function updateHero(formData: FormData) {
 export async function saveCarouselSlide(formData: FormData) {
   await requireCapability("manageMedia");
 
+  const uploadedImageUrl = await saveImageFromForm(
+    formData.get("imageFile"),
+    formString(formData, "imageAlt"),
+  );
+
   const data = {
     title: formString(formData, "title"),
     subtitle: formString(formData, "subtitle"),
-    imageUrl: formString(formData, "imageUrl"),
+    imageUrl: uploadedImageUrl || formString(formData, "imageUrl"),
     imageAlt: formString(formData, "imageAlt"),
     buttonLabel: emptyToNull(formData.get("buttonLabel")),
     buttonUrl: emptyToNull(formData.get("buttonUrl")),
@@ -225,9 +286,14 @@ export async function deleteCarouselSlide(formData: FormData) {
 export async function saveBrand(formData: FormData) {
   await requireCapability("manageContent");
 
+  const uploadedLogoUrl = await saveImageFromForm(
+    formData.get("logoFile"),
+    formString(formData, "name") ? `Logo ${formString(formData, "name")}` : null,
+  );
+
   const data = {
     name: formString(formData, "name"),
-    logoUrl: emptyToNull(formData.get("logoUrl")),
+    logoUrl: uploadedLogoUrl || emptyToNull(formData.get("logoUrl")),
     description: emptyToNull(formData.get("description")),
     officialUrl: emptyToNull(formData.get("officialUrl")),
     isFeatured: formBool(formData, "isFeatured"),
@@ -292,41 +358,77 @@ export async function updateGoogleReviewSetting(formData: FormData) {
   redirectSaved("/admin/avaliacoes");
 }
 
-export async function saveGoogleReview(formData: FormData) {
+type GooglePlaceReview = {
+  name?: string;
+  rating?: number;
+  text?: { text?: string };
+  authorAttribution?: {
+    displayName?: string;
+    photoUri?: string;
+    uri?: string;
+  };
+};
+
+type GooglePlaceDetailsResponse = {
+  rating?: number;
+  userRatingCount?: number;
+  reviews?: GooglePlaceReview[];
+};
+
+export async function syncGoogleReviews() {
   await requireCapability("manageContent");
 
-  const data = {
-    authorName: formString(formData, "authorName"),
-    authorPhotoUrl: emptyToNull(formData.get("authorPhotoUrl")),
-    rating: Number(formData.get("rating") || 5),
-    text: formString(formData, "text"),
-    reviewUrl: emptyToNull(formData.get("reviewUrl")),
-    isActive: formBool(formData, "isActive"),
-    order: parseOrder(formData),
-  };
+  const apiKey = process.env.GOOGLE_PLACES_API_KEY;
+  const placeId = process.env.GOOGLE_PLACE_ID;
 
-  z.object({
-    authorName: shortText,
-    authorPhotoUrl: z.string().url().nullable(),
-    rating: z.number().int().min(1).max(5),
-    text: longText,
-    reviewUrl: z.string().url().nullable(),
-  }).parse(data);
-
-  const id = formString(formData, "id");
-  if (id) {
-    await prisma.googleReview.update({ where: { id }, data });
-  } else {
-    await prisma.googleReview.create({ data });
+  if (!apiKey || !placeId) {
+    throw new Error("Configure GOOGLE_PLACES_API_KEY e GOOGLE_PLACE_ID no .env da VPS.");
   }
 
-  revalidatePublic();
-  redirectSaved("/admin/avaliacoes");
-}
+  const response = await fetch(`https://places.googleapis.com/v1/places/${placeId}?languageCode=pt-BR`, {
+    headers: {
+      "X-Goog-Api-Key": apiKey,
+      "X-Goog-FieldMask": "rating,userRatingCount,reviews",
+    },
+    cache: "no-store",
+  });
 
-export async function deleteGoogleReview(formData: FormData) {
-  await requireCapability("manageContent");
-  await prisma.googleReview.delete({ where: { id: formString(formData, "id") } });
+  if (!response.ok) {
+    throw new Error("Não foi possível buscar avaliações reais do Google.");
+  }
+
+  const data = (await response.json()) as GooglePlaceDetailsResponse;
+  const reviews = (data.reviews ?? [])
+    .map((review, index) => ({
+      authorName: review.authorAttribution?.displayName || "Cliente Google",
+      authorPhotoUrl: review.authorAttribution?.photoUri || null,
+      rating: Math.min(5, Math.max(1, Math.round(review.rating || 5))),
+      text: review.text?.text?.trim() || "",
+      reviewUrl: review.authorAttribution?.uri || null,
+      isActive: true,
+      order: index + 1,
+    }))
+    .filter((review) => review.text.length > 0);
+
+  await prisma.$transaction([
+    prisma.googleReview.deleteMany({}),
+    prisma.googleReviewSetting.upsert({
+      where: { id: "main" },
+      update: {
+        ratingAverage: data.rating || 5,
+        reviewCount: data.userRatingCount || reviews.length,
+        isEnabled: true,
+      },
+      create: {
+        id: "main",
+        ratingAverage: data.rating || 5,
+        reviewCount: data.userRatingCount || reviews.length,
+        isEnabled: true,
+      },
+    }),
+    ...(reviews.length ? [prisma.googleReview.createMany({ data: reviews })] : []),
+  ]);
+
   revalidatePublic();
   redirectSaved("/admin/avaliacoes");
 }
@@ -443,58 +545,10 @@ export async function updateSeoSetting(formData: FormData) {
 export async function uploadMedia(formData: FormData) {
   await requireCapability("manageMedia");
 
-  const file = formData.get("file");
-  if (!(file instanceof File) || file.size === 0) {
+  const url = await saveImageFromForm(formData.get("file"), emptyToNull(formData.get("altText")));
+  if (!url) {
     throw new Error("Envie uma imagem válida.");
   }
-
-  const maxMb = Number(process.env.MAX_UPLOAD_MB || 5);
-  const maxBytes = maxMb * 1024 * 1024;
-  if (file.size > maxBytes) {
-    throw new Error(`A imagem deve ter até ${maxMb} MB.`);
-  }
-
-  const allowedTypes = new Set(["image/jpeg", "image/png", "image/webp", "image/avif"]);
-  if (!allowedTypes.has(file.type)) {
-    throw new Error("Use JPG, PNG, WebP ou AVIF.");
-  }
-
-  const uploadRoot = getUploadRoot();
-  await mkdir(uploadRoot, { recursive: true });
-
-  const extension =
-    file.type === "image/png"
-      ? "png"
-      : file.type === "image/webp"
-        ? "webp"
-        : file.type === "image/avif"
-          ? "avif"
-          : "jpg";
-  const fileName = `${Date.now()}-${nanoid(10)}.${extension}`;
-  const absolutePath = `${uploadRoot}/${fileName}`;
-  const buffer = Buffer.from(await file.arrayBuffer());
-  let metadata: { width?: number; height?: number } = {};
-  try {
-    const sharp = (await import("sharp")).default;
-    metadata = await sharp(buffer).metadata();
-  } catch {
-    metadata = {};
-  }
-
-  await writeFile(absolutePath, buffer);
-
-  await prisma.mediaAsset.create({
-    data: {
-      originalName: file.name,
-      fileName,
-      url: `/media/${fileName}`,
-      mimeType: file.type,
-      size: file.size,
-      width: metadata.width,
-      height: metadata.height,
-      altText: emptyToNull(formData.get("altText")),
-    },
-  });
 
   revalidatePublic();
   redirectSaved("/admin/midia");

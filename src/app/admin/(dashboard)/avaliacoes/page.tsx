@@ -1,10 +1,9 @@
 import {
-  deleteGoogleReview,
-  saveGoogleReview,
+  syncGoogleReviews,
   updateGoogleReviewSetting,
 } from "@/app/admin/actions";
 import { AdminPage } from "@/components/admin/admin-page";
-import { FormCheckbox, FormInput, FormSelect, FormTextarea } from "@/components/admin/form-input";
+import { FormCheckbox, FormInput, FormTextarea } from "@/components/admin/form-input";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { requireCapability } from "@/lib/admin-auth";
@@ -14,48 +13,7 @@ type PageProps = {
   searchParams: Promise<{ saved?: string }>;
 };
 
-const ratingOptions = [5, 4, 3, 2, 1].map((value) => ({
-  label: `${value} estrela${value > 1 ? "s" : ""}`,
-  value: String(value),
-}));
-
 type Review = Awaited<ReturnType<typeof getGoogleReviews>>[number];
-
-function ReviewForm({ review }: { review?: Review }) {
-  return (
-    <form action={saveGoogleReview} className="grid gap-4 rounded-lg border border-brand-dark/10 bg-white p-5">
-      {review ? <input type="hidden" name="id" value={review.id} /> : null}
-      <div className="grid gap-4 md:grid-cols-2">
-        <FormInput label="Nome do cliente" name="authorName" defaultValue={review?.authorName} required />
-        <FormInput label="Ordem" name="order" type="number" defaultValue={review?.order ?? 0} required />
-        <FormSelect label="Nota" name="rating" defaultValue={review?.rating ?? 5} options={ratingOptions} />
-        <FormInput
-          label="Foto do cliente"
-          name="authorPhotoUrl"
-          defaultValue={review?.authorPhotoUrl}
-          help="Opcional. Use uma URL autorizada ou deixe em branco para iniciais."
-        />
-        <FormInput
-          className="md:col-span-2"
-          label="Link da avaliação"
-          name="reviewUrl"
-          defaultValue={review?.reviewUrl}
-          help="Opcional. Use o link público da avaliação no Google, quando disponível."
-        />
-        <FormTextarea
-          className="md:col-span-2"
-          label="Texto da avaliação"
-          name="text"
-          defaultValue={review?.text}
-          rows={4}
-          required
-        />
-      </div>
-      <FormCheckbox label="Mostrar na landing" name="isActive" defaultChecked={review?.isActive ?? true} />
-      <Button type="submit" className="w-fit">{review ? "Salvar avaliação" : "Criar avaliação"}</Button>
-    </form>
-  );
-}
 
 export default async function AvaliacoesPage({ searchParams }: PageProps) {
   await requireCapability("manageContent");
@@ -113,22 +71,50 @@ export default async function AvaliacoesPage({ searchParams }: PageProps) {
       </Card>
 
       <Card className="p-5">
-        <h2 className="mb-4 text-lg font-semibold text-brand-dark">Nova avaliação</h2>
-        <ReviewForm />
+        <div className="grid gap-5 lg:grid-cols-[1fr_auto] lg:items-center">
+          <div>
+            <h2 className="text-lg font-semibold text-brand-dark">Sincronização com Google</h2>
+            <p className="mt-2 text-sm leading-6 text-brand-dark/62">
+              As avaliações exibidas na landing devem vir do perfil real da empresa no Google.
+              A sincronização usa a API oficial do Google Places e substitui a lista local pelos
+              comentários retornados pelo perfil.
+            </p>
+            <p className="mt-2 text-xs leading-5 text-brand-dark/52">
+              Requer `GOOGLE_PLACES_API_KEY` e `GOOGLE_PLACE_ID` configurados no ambiente da VPS.
+            </p>
+          </div>
+          <form action={syncGoogleReviews}>
+            <Button type="submit">Sincronizar avaliações reais</Button>
+          </form>
+        </div>
       </Card>
 
       <div className="grid gap-4">
-        {reviews.map((review) => (
-          <Card key={review.id} className="grid gap-4 p-5">
-            <ReviewForm review={review} />
-            <form action={deleteGoogleReview}>
-              <input type="hidden" name="id" value={review.id} />
-              <button type="submit" className="text-sm font-semibold text-red-700">
-                Excluir avaliação
-              </button>
-            </form>
+        {reviews.length > 0 ? (
+          reviews.map((review: Review) => (
+            <Card key={review.id} className="p-5">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <h3 className="font-semibold text-brand-dark">{review.authorName}</h3>
+                  <p className="mt-1 text-sm text-brand-dark/55">
+                    {review.rating} de 5 estrelas
+                  </p>
+                </div>
+                <span className="rounded-full bg-brand/18 px-3 py-1 text-xs font-semibold text-brand-dark">
+                  Google
+                </span>
+              </div>
+              <p className="mt-4 text-sm leading-6 text-brand-dark/66">{review.text}</p>
+            </Card>
+          ))
+        ) : (
+          <Card className="p-5">
+            <p className="text-sm leading-6 text-brand-dark/62">
+              Nenhuma avaliação sincronizada ainda. Configure as credenciais do Google e use o
+              botão de sincronização.
+            </p>
           </Card>
-        ))}
+        )}
       </div>
     </AdminPage>
   );
