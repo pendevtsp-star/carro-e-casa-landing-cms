@@ -1,0 +1,145 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model AdminUser {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         String   @default("admin")
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model SiteSetting {
+  id                    String   @id @default("main")
+  businessName          String   @default("Carro & Casa")
+  slogan                String   @default("Produtos premium para carro e casa")
+  institutionalText     String   @db.Text
+  whatsappNumber        String   @default("558230287161")
+  whatsappMessage       String   @default("Ola, vim pelo site da Carro & Casa e gostaria de atendimento.")
+  instagramUrl          String   @default("https://www.instagram.com/lojacarroecasa/")
+  address               String?
+  openingHours          String?
+  email                 String?
+  googleMapsUrl         String?
+  googleMapsEmbed       String?  @db.Text
+  logoUrl               String   @default("/brand/logo-carro-casa.jpg")
+  alternateLogoUrl      String?
+  faviconUrl            String?
+  primaryColor          String   @default("#f6c400")
+  secondaryColor        String   @default("#05080a")
+  backgroundColor       String   @default("#fffdf4")
+  appAccessUrl          String   @default("https://app.lojacarroecasa.com.br")
+  appAccessEnabled      Boolean  @default(false)
+  appAccessLabel        String   @default("Acessar sistema")
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+
+model HeroSection {
+  id                   String   @id @default("main")
+  title                String
+  subtitle             String   @db.Text
+  primaryButtonLabel   String   @default("Falar no WhatsApp")
+  primaryButtonUrl     String?
+  secondaryButtonLabel String   @default("Ver Instagram")
+  secondaryButtonUrl   String?
+  badgeText            String   @default("+50 marcas premium")
+  highlightText        String   @default("Atendimento especializado")
+  imageUrl             String   @default("/generated/hero-care-studio.png")
+  imageAlt             String   @default("Produtos premium de cuidado automotivo e limpeza organizados em estúdio")
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+}
+
+model CarouselSlide {
+  id          String   @id @default(cuid())
+  title       String
+  subtitle    String   @db.Text
+  imageUrl    String
+  imageAlt    String
+  buttonLabel String?
+  buttonUrl   String?
+  isActive    Boolean  @default(true)
+  order        Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Brand {
+  id          String   @id @default(cuid())
+  name        String
+  logoUrl     String?
+  description String?  @db.Text
+  officialUrl String?
+  isFeatured  Boolean  @default(true)
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Category {
+  id              String   @id @default(cuid())
+  name            String
+  description     String   @db.Text
+  iconName        String   @default("Sparkles")
+  imageUrl        String?
+  whatsappMessage String?
+  isActive        Boolean  @default(true)
+  order           Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model FAQItem {
+  id        String   @id @default(cuid())
+  question  String
+  answer    String   @db.Text
+  isActive  Boolean  @default(true)
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model LegalPage {
+  id             String   @id @default(cuid())
+  slug           String   @unique
+  title          String
+  content        String   @db.Text
+  seoTitle       String?
+  seoDescription String?  @db.Text
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model MediaAsset {
+  id           String   @id @default(cuid())
+  originalName String
+  fileName     String
+  url          String   @unique
+  mimeType     String
+  size         Int
+  width        Int?
+  height       Int?
+  altText      String?
+  createdAt    DateTime @default(now())
+}
+
+model SeoSetting {
+  id          String   @id @default(cuid())
+  page        String   @unique
+  title       String
+  description String   @db.Text
+  keywords    String?
+  ogImageUrl  String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}

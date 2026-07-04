@@ -1,0 +1,127 @@
+# Carro & Casa Landing
+
+Landing page institucional premium da Carro & Casa, com painel administrativo simples para manter textos, imagens, carrossel, marcas, categorias, FAQ, páginas legais, SEO e contatos.
+
+Este projeto é apenas a landing institucional. O futuro SaaS deve ficar em outro projeto/repositório e será acessado por um botão opcional configurável.
+
+## Stack
+
+- Next.js App Router + TypeScript
+- Tailwind CSS
+- Prisma ORM + PostgreSQL
+- Auth.js com login por credenciais
+- Upload local persistente para VPS/Docker
+- Zod para validação
+
+## Rotas
+
+- `/` landing pública
+- `/faq` FAQ completo
+- `/termos-de-uso` termos editáveis
+- `/privacidade` política editável
+- `/admin/login` login administrativo
+- `/admin` painel protegido
+
+## Configuração Local
+
+1. Instale dependências:
+
+```bash
+npm install
+```
+
+2. Copie as variáveis:
+
+```bash
+cp .env.example .env
+```
+
+3. Ajuste no `.env`:
+
+```env
+DATABASE_URL="postgresql://carro_casa:carro_casa_password@localhost:5432/carro_casa?schema=public"
+AUTH_SECRET="uma-chave-segura-com-32-caracteres-ou-mais"
+ADMIN_SEED_EMAIL="admin@lojacarroecasa.com.br"
+ADMIN_SEED_PASSWORD="troque-esta-senha"
+UPLOAD_DIR="./uploads"
+```
+
+4. Suba um PostgreSQL local ou use Docker:
+
+```bash
+docker compose up -d db
+```
+
+5. Rode migrações e seed:
+
+```bash
+npm run db:deploy
+npm run db:seed
+```
+
+6. Rode em desenvolvimento:
+
+```bash
+npm run dev
+```
+
+Acesse `http://localhost:3000/admin/login` com o e-mail e senha definidos no `.env`.
+
+## Deploy VPS/Docker
+
+1. Crie `.env` no servidor com valores de produção.
+2. Suba banco e aplicação:
+
+```bash
+docker compose up -d --build
+```
+
+3. Aplique migrações e seed dentro do container:
+
+```bash
+docker compose exec web npm run db:deploy
+docker compose exec web npm run db:seed
+```
+
+Uploads ficam no volume `uploads_data`, montado em `/app/uploads`.
+
+## Scripts
+
+- `npm run dev` inicia o Next em desenvolvimento
+- `npm run build` gera build de produção
+- `npm run start` inicia produção
+- `npm run lint` roda ESLint
+- `npm run typecheck` roda TypeScript
+- `npm run db:generate` gera Prisma Client
+- `npm run db:deploy` aplica migrações em produção
+- `npm run db:seed` cria conteúdo inicial e usuário admin
+
+Os scripts chamam binários via `node ./node_modules/...` para funcionar bem mesmo com `&` no caminho da pasta no Windows.
+
+## Conteúdo Inicial
+
+O seed cadastra:
+
+- Dados institucionais da Carro & Casa
+- WhatsApp `+55 82 3028-7161`
+- Instagram `https://www.instagram.com/lojacarroecasa/`
+- Endereço e horário observados nos materiais enviados
+- Hero, carrossel, marcas, categorias, FAQ, termos, privacidade e SEO base
+- Botão “Acessar sistema” desativado por padrão
+
+## Imagens E Marcas
+
+- A logo enviada foi preservada em `public/brand/logo-carro-casa.jpg`.
+- As imagens de hero/carrossel foram geradas como assets neutros, sem marcas, textos ou produtos identificáveis.
+- Logos das marcas destacadas estão como placeholders até a cliente fornecer arquivos oficiais autorizados.
+- Não há hotlink de imagens externas.
+
+## Pendências Para Produção
+
+- Confirmar número final do WhatsApp.
+- Confirmar e-mail institucional, se houver.
+- Confirmar Google Maps embed oficial.
+- Enviar logos oficiais/autorizadas de Autolimpe, Nasiol, Vonixx, Dimension e CarCare.
+- Trocar a senha admin criada pelo seed.
+- Definir `NEXT_PUBLIC_SITE_URL` com o domínio final.
+- Definir `NEXT_PUBLIC_APP_ACCESS_URL` quando o futuro SaaS estiver pronto.

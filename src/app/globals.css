@@ -1,0 +1,61 @@
+@import "tailwindcss";
+
+:root {
+  --background: #fffdf4;
+  --foreground: #111111;
+  --brand: #f6c400;
+  --brand-dark: #05080a;
+  --muted: #6f6a5f;
+  --line: rgba(5, 8, 10, 0.12);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-brand: var(--brand);
+  --color-brand-dark: var(--brand-dark);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+::selection {
+  background: rgba(246, 196, 0, 0.35);
+}
+
+button,
+a,
+input,
+textarea,
+select {
+  outline-color: #f6c400;
+}
+
+.glass-panel {
+  background: rgba(255, 253, 244, 0.82);
+  backdrop-filter: blur(18px);
+}
+
+.text-balance {
+  text-wrap: balance;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
