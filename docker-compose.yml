@@ -3,25 +3,29 @@ services:
     image: postgres:16-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_DB: carro_casa
-      POSTGRES_USER: carro_casa
-      POSTGRES_PASSWORD: carro_casa_password
+      POSTGRES_DB: ${POSTGRES_DB:-carro_casa}
+      POSTGRES_USER: ${POSTGRES_USER:-carro_casa}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-carro_casa} -d ${POSTGRES_DB:-carro_casa}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   web:
     build: .
     restart: unless-stopped
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     ports:
-      - "3000:3000"
+      - "${APP_HOST_BIND:-127.0.0.1}:${APP_PORT:-3001}:3000"
     env_file:
       - .env
     environment:
-      DATABASE_URL: postgresql://carro_casa:carro_casa_password@db:5432/carro_casa?schema=public
+      DATABASE_URL: postgresql://${POSTGRES_USER:-carro_casa}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-carro_casa}?schema=public
       UPLOAD_DIR: /app/uploads
     volumes:
       - uploads_data:/app/uploads

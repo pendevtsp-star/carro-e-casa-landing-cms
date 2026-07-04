@@ -39,7 +39,8 @@ cp .env.example .env
 3. Ajuste no `.env`:
 
 ```env
-DATABASE_URL="postgresql://carro_casa:carro_casa_password@localhost:5432/carro_casa?schema=public"
+POSTGRES_PASSWORD="troque-por-uma-senha-forte"
+DATABASE_URL="postgresql://carro_casa:troque-por-uma-senha-forte@localhost:5432/carro_casa?schema=public"
 AUTH_SECRET="uma-chave-segura-com-32-caracteres-ou-mais"
 ADMIN_SEED_EMAIL="admin@lojacarroecasa.com.br"
 ADMIN_SEED_PASSWORD="troque-esta-senha"
@@ -69,14 +70,27 @@ Acesse `http://localhost:3000/admin/login` com o e-mail e senha definidos no `.e
 
 ## Deploy VPS/Docker
 
-1. Crie `.env` no servidor com valores de produção.
-2. Suba banco e aplicação:
+Layout recomendado na VPS, mantendo o projeto separado de outros sistemas:
+
+```text
+/srv/apps/carro-e-casa/
+  app/
+  data/
+  backups/
+  ops/
+```
+
+O `docker-compose.yml` publica a aplicação apenas em `127.0.0.1:3001` por padrão. O PostgreSQL fica somente na rede Docker, sem porta aberta no host. O Nginx deve fazer proxy para `http://127.0.0.1:3001`.
+
+1. Clone o repositório em `/srv/apps/carro-e-casa/app`.
+2. Crie `.env` no servidor com valores de produção. Use senhas e secrets novos, não reaproveite os exemplos.
+3. Suba banco e aplicação:
 
 ```bash
 docker compose up -d --build
 ```
 
-3. Aplique migrações e seed dentro do container:
+4. Aplique migrações e seed dentro do container:
 
 ```bash
 docker compose exec web npm run db:deploy
