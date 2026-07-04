@@ -135,7 +135,7 @@ O seed cadastra:
 - Confirmar número final do WhatsApp.
 - Confirmar e-mail institucional, se houver.
 - Confirmar Google Maps embed oficial.
-- Enviar logos oficiais/autorizadas de Autolimpe, Nasiol, Vonixx, Dimension e CarCare.
+- Enviar logos oficiais/autorizadas de Autolimpe, Nasiol, Vonixx e Dimension.
 - Trocar a senha admin criada pelo seed.
 - Definir `NEXT_PUBLIC_SITE_URL` com o domínio final.
 - Definir `NEXT_PUBLIC_APP_ACCESS_URL` quando o futuro SaaS estiver pronto.

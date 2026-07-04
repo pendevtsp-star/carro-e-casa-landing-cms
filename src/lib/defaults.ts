@@ -101,14 +101,6 @@ export const defaultBrands = [
     isFeatured: true,
     order: 4,
   },
-  {
-    name: "CarCare",
-    logoUrl: "",
-    description: "Placeholder aguardando arquivo oficial autorizado.",
-    officialUrl: "",
-    isFeatured: false,
-    order: 5,
-  },
 ];
 
 export const defaultCategories = [
@@ -197,7 +189,7 @@ export const defaultFaqItems = [
   {
     question: "Quais marcas vocês trabalham?",
     answer:
-      "A loja trabalha com mais de 50 marcas premium, incluindo Autolimpe, Nasiol, Vonixx, Dimension e CarCare.",
+      "A loja trabalha com mais de 50 marcas premium, incluindo Autolimpe, Nasiol, Vonixx e Dimension.",
     isActive: true,
     order: 4,
   },
