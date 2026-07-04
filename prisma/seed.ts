@@ -5,6 +5,8 @@ import {
   defaultCarouselSlides,
   defaultCategories,
   defaultFaqItems,
+  defaultGoogleReviewSetting,
+  defaultGoogleReviews,
   defaultHero,
   defaultLegalPages,
   defaultSeoSettings,
@@ -58,6 +60,21 @@ async function main() {
     });
     if (!existing) {
       await prisma.fAQItem.create({ data: faq });
+    }
+  }
+
+  await prisma.googleReviewSetting.upsert({
+    where: { id: "main" },
+    update: {},
+    create: defaultGoogleReviewSetting,
+  });
+
+  for (const review of defaultGoogleReviews) {
+    const existing = await prisma.googleReview.findFirst({
+      where: { authorName: review.authorName, text: review.text },
+    });
+    if (!existing) {
+      await prisma.googleReview.create({ data: review });
     }
   }
 

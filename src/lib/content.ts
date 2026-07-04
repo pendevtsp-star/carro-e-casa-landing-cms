@@ -5,6 +5,8 @@ import {
   defaultCarouselSlides,
   defaultCategories,
   defaultFaqItems,
+  defaultGoogleReviewSetting,
+  defaultGoogleReviews,
   defaultHero,
   defaultLegalPages,
   defaultSeoSettings,
@@ -66,6 +68,26 @@ export const getBrands = cache(async (featuredOnly = true) => {
         orderBy: [{ order: "asc" }, { createdAt: "asc" }],
       }),
     withFallbackMeta(defaultBrands),
+  );
+});
+
+export const getGoogleReviewSetting = cache(async () => {
+  return dbOrFallback(
+    async () =>
+      (await prisma.googleReviewSetting.findUnique({ where: { id: "main" } })) ??
+      defaultGoogleReviewSetting,
+    defaultGoogleReviewSetting,
+  );
+});
+
+export const getGoogleReviews = cache(async (activeOnly = true) => {
+  return dbOrFallback(
+    async () =>
+      prisma.googleReview.findMany({
+        where: activeOnly ? { isActive: true } : undefined,
+        orderBy: [{ order: "asc" }, { createdAt: "desc" }],
+      }),
+    withFallbackMeta(defaultGoogleReviews),
   );
 });
 

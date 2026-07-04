@@ -6,6 +6,7 @@ import {
   MessageCircle,
   Search,
   Settings,
+  Star,
   Tags,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -20,6 +21,7 @@ import {
   getCarouselSlides,
   getCategories,
   getFaqItems,
+  getGoogleReviews,
   getSiteSetting,
 } from "@/lib/content";
 
@@ -28,6 +30,7 @@ const cards: Array<[string, string, LucideIcon, string]> = [
   ["Home", "/admin/home", MessageCircle, "Hero, chamadas principais e imagem de destaque."],
   ["Carrossel", "/admin/carrossel", GalleryHorizontal, "Banners e campanhas institucionais."],
   ["Marcas", "/admin/marcas", Tags, "Marcas premium em destaque."],
+  ["Avaliações", "/admin/avaliacoes", Star, "Depoimentos Google exibidos na landing."],
   ["FAQ", "/admin/faq", FileQuestion, "Perguntas frequentes da home e página completa."],
   ["Mídia", "/admin/midia", Image, "Upload e URLs das imagens."],
   ["SEO", "/admin/seo", Search, "Títulos, descrições e Open Graph."],
@@ -38,7 +41,7 @@ type DashboardProps = {
 };
 
 export default async function AdminDashboardPage({ searchParams }: DashboardProps) {
-  const [params, currentUser, settings, slides, brands, categories, faqs] = await Promise.all([
+  const [params, currentUser, settings, slides, brands, categories, faqs, reviews] = await Promise.all([
     searchParams,
     getCurrentAdminUser(),
     getSiteSetting(),
@@ -46,6 +49,7 @@ export default async function AdminDashboardPage({ searchParams }: DashboardProp
     getBrands(false),
     getCategories(false),
     getFaqItems(false),
+    getGoogleReviews(false),
   ]);
   const visibleCards = cards.filter(([, href]) => canAccessAdminPath(currentUser.role, href));
 
@@ -66,6 +70,7 @@ export default async function AdminDashboardPage({ searchParams }: DashboardProp
           ["Marcas", brands.length],
           ["Categorias", categories.length],
           ["FAQs", faqs.length],
+          ["Avaliações", reviews.length],
         ].map(([label, value]) => (
           <Card key={label} className="p-5">
             <p className="text-sm text-brand-dark/55">{label}</p>

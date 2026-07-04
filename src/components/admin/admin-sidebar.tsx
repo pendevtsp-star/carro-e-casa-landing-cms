@@ -11,6 +11,7 @@ import {
   Search,
   Settings,
   Shapes,
+  Star,
   Tags,
   Users,
 } from "lucide-react";
@@ -25,6 +26,7 @@ const links: Array<[string, string, LucideIcon]> = [
   ["Home", "/admin/home", Home],
   ["Carrossel", "/admin/carrossel", GalleryHorizontal],
   ["Marcas", "/admin/marcas", Tags],
+  ["Avaliações", "/admin/avaliacoes", Star],
   ["Categorias", "/admin/categorias", Shapes],
   ["FAQ", "/admin/faq", FileQuestion],
   ["Páginas legais", "/admin/paginas-legais", FileText],

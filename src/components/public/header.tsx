@@ -25,6 +25,7 @@ const navItems = [
   ["Marcas", "/#marcas"],
   ["Produtos", "/#produtos"],
   ["Empresas", "/empresas"],
+  ["Avaliações", "/#avaliacoes"],
   ["Sobre", "/#sobre"],
   ["FAQ", "/#faq"],
   ["Contato", "/#contato"],

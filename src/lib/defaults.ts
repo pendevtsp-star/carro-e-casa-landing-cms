@@ -103,6 +103,28 @@ export const defaultBrands = [
   },
 ];
 
+export const defaultGoogleReviewSetting = {
+  id: "main",
+  isEnabled: true,
+  sectionTitle: "Avaliações Google",
+  sectionSubtitle:
+    "A experiência de quem já conhece a Carro & Casa ajuda novos clientes a escolherem com confiança.",
+  ratingAverage: 5,
+  reviewCount: 0,
+  googleProfileUrl: "https://share.google/2NRGZNwWO9DOtiIIt",
+  reviewButtonLabel: "Avaliar no Google",
+};
+
+export const defaultGoogleReviews: Array<{
+  authorName: string;
+  authorPhotoUrl: string | null;
+  rating: number;
+  text: string;
+  reviewUrl: string | null;
+  isActive: boolean;
+  order: number;
+}> = [];
+
 export const defaultCategories = [
   {
     name: "Cuidados automotivos",

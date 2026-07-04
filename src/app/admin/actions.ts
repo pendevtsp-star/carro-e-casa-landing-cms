@@ -254,6 +254,83 @@ export async function deleteBrand(formData: FormData) {
   redirectSaved("/admin/marcas");
 }
 
+export async function updateGoogleReviewSetting(formData: FormData) {
+  await requireCapability("manageContent");
+
+  const parsed = z
+    .object({
+      sectionTitle: shortText,
+      sectionSubtitle: longText,
+      ratingAverage: z.coerce.number().min(0).max(5),
+      reviewCount: z.coerce.number().int().min(0),
+      googleProfileUrl: z.string().url("Informe uma URL válida."),
+      reviewButtonLabel: shortText,
+    })
+    .parse({
+      sectionTitle: formData.get("sectionTitle"),
+      sectionSubtitle: formData.get("sectionSubtitle"),
+      ratingAverage: formData.get("ratingAverage"),
+      reviewCount: formData.get("reviewCount"),
+      googleProfileUrl: formData.get("googleProfileUrl"),
+      reviewButtonLabel: formData.get("reviewButtonLabel"),
+    });
+
+  await prisma.googleReviewSetting.upsert({
+    where: { id: "main" },
+    update: {
+      ...parsed,
+      isEnabled: formBool(formData, "isEnabled"),
+    },
+    create: {
+      id: "main",
+      ...parsed,
+      isEnabled: formBool(formData, "isEnabled"),
+    },
+  });
+
+  revalidatePublic();
+  redirectSaved("/admin/avaliacoes");
+}
+
+export async function saveGoogleReview(formData: FormData) {
+  await requireCapability("manageContent");
+
+  const data = {
+    authorName: formString(formData, "authorName"),
+    authorPhotoUrl: emptyToNull(formData.get("authorPhotoUrl")),
+    rating: Number(formData.get("rating") || 5),
+    text: formString(formData, "text"),
+    reviewUrl: emptyToNull(formData.get("reviewUrl")),
+    isActive: formBool(formData, "isActive"),
+    order: parseOrder(formData),
+  };
+
+  z.object({
+    authorName: shortText,
+    authorPhotoUrl: z.string().url().nullable(),
+    rating: z.number().int().min(1).max(5),
+    text: longText,
+    reviewUrl: z.string().url().nullable(),
+  }).parse(data);
+
+  const id = formString(formData, "id");
+  if (id) {
+    await prisma.googleReview.update({ where: { id }, data });
+  } else {
+    await prisma.googleReview.create({ data });
+  }
+
+  revalidatePublic();
+  redirectSaved("/admin/avaliacoes");
+}
+
+export async function deleteGoogleReview(formData: FormData) {
+  await requireCapability("manageContent");
+  await prisma.googleReview.delete({ where: { id: formString(formData, "id") } });
+  revalidatePublic();
+  redirectSaved("/admin/avaliacoes");
+}
+
 export async function saveCategory(formData: FormData) {
   await requireCapability("manageContent");
 

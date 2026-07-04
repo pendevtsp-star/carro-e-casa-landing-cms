@@ -22,6 +22,7 @@ import { BrandCarousel } from "@/components/public/brand-carousel";
 import { Carousel } from "@/components/public/carousel";
 import { CategoryCard } from "@/components/public/category-card";
 import { FAQAccordion } from "@/components/public/faq-accordion";
+import { GoogleReviewsSection } from "@/components/public/google-reviews-section";
 import { PublicShell } from "@/components/public/public-shell";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -32,6 +33,8 @@ import {
   getCarouselSlides,
   getCategories,
   getFaqItems,
+  getGoogleReviewSetting,
+  getGoogleReviews,
   getHero,
   getSeoSetting,
   getSiteSetting,
@@ -66,13 +69,16 @@ const businessServices: Array<[string, string, LucideIcon]> = [
 ];
 
 export default async function HomePage() {
-  const [settings, hero, slides, brands, categories, faqs] = await Promise.all([
+  const [settings, hero, slides, brands, categories, faqs, googleReviewSetting, googleReviews] =
+    await Promise.all([
     getSiteSetting(),
     getHero(),
     getCarouselSlides(true),
     getBrands(true),
     getCategories(true),
     getFaqItems(true),
+    getGoogleReviewSetting(),
+    getGoogleReviews(true),
   ]);
 
   const whatsappUrl = buildWhatsappUrl(settings.whatsappNumber, settings.whatsappMessage);
@@ -247,6 +253,8 @@ export default async function HomePage() {
             </Button>
           </Container>
         </section>
+
+        <GoogleReviewsSection setting={googleReviewSetting} reviews={googleReviews} />
 
         <section id="faq" className="bg-background py-16">
           <Container className="grid gap-8 lg:grid-cols-[0.8fr_1.2fr]">

@@ -70,6 +70,8 @@ Acesse `http://localhost:3000/admin/login` com o e-mail e senha definidos no `.e
 
 ## Deploy VPS/Docker
 
+Guia operacional com deploy, backup, SSL e DNS: [docs/OPERACAO-VPS.md](docs/OPERACAO-VPS.md).
+
 Layout recomendado na VPS, mantendo o projeto separado de outros sistemas:
 
 ```text

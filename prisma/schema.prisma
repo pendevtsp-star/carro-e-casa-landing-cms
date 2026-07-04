@@ -20,29 +20,29 @@ model AdminUser {
 }
 
 model SiteSetting {
-  id                    String   @id @default("main")
-  businessName          String   @default("Carro & Casa")
-  slogan                String   @default("Produtos premium para carro e casa")
-  institutionalText     String   @db.Text
-  whatsappNumber        String   @default("558230287161")
-  whatsappMessage       String   @default("Ola, vim pelo site da Carro & Casa e gostaria de atendimento.")
-  instagramUrl          String   @default("https://www.instagram.com/lojacarroecasa/")
-  address               String?
-  openingHours          String?
-  email                 String?
-  googleMapsUrl         String?
-  googleMapsEmbed       String?  @db.Text
-  logoUrl               String   @default("/brand/logo-carro-casa.jpg")
-  alternateLogoUrl      String?
-  faviconUrl            String?
-  primaryColor          String   @default("#f6c400")
-  secondaryColor        String   @default("#05080a")
-  backgroundColor       String   @default("#fffdf4")
-  appAccessUrl          String   @default("https://app.lojacarroecasa.com.br")
-  appAccessEnabled      Boolean  @default(false)
-  appAccessLabel        String   @default("Acessar sistema")
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
+  id                String   @id @default("main")
+  businessName      String   @default("Carro & Casa")
+  slogan            String   @default("Produtos premium para carro e casa")
+  institutionalText String   @db.Text
+  whatsappNumber    String   @default("558230287161")
+  whatsappMessage   String   @default("Ola, vim pelo site da Carro & Casa e gostaria de atendimento.")
+  instagramUrl      String   @default("https://www.instagram.com/lojacarroecasa/")
+  address           String?
+  openingHours      String?
+  email             String?
+  googleMapsUrl     String?
+  googleMapsEmbed   String?  @db.Text
+  logoUrl           String   @default("/brand/logo-carro-casa.jpg")
+  alternateLogoUrl  String?
+  faviconUrl        String?
+  primaryColor      String   @default("#f6c400")
+  secondaryColor    String   @default("#05080a")
+  backgroundColor   String   @default("#fffdf4")
+  appAccessUrl      String   @default("https://app.lojacarroecasa.com.br")
+  appAccessEnabled  Boolean  @default(false)
+  appAccessLabel    String   @default("Acessar sistema")
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 }
 
 model HeroSection {
@@ -70,7 +70,7 @@ model CarouselSlide {
   buttonLabel String?
   buttonUrl   String?
   isActive    Boolean  @default(true)
-  order        Int      @default(0)
+  order       Int      @default(0)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
@@ -132,6 +132,32 @@ model MediaAsset {
   height       Int?
   altText      String?
   createdAt    DateTime @default(now())
+}
+
+model GoogleReviewSetting {
+  id                String   @id @default("main")
+  isEnabled         Boolean  @default(true)
+  sectionTitle      String   @default("Avaliações Google")
+  sectionSubtitle   String   @default("A experiência de quem já conhece a Carro & Casa ajuda novos clientes a escolherem com confiança.")
+  ratingAverage     Float    @default(5)
+  reviewCount       Int      @default(0)
+  googleProfileUrl  String   @default("https://share.google/2NRGZNwWO9DOtiIIt")
+  reviewButtonLabel String   @default("Avaliar no Google")
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model GoogleReview {
+  id             String   @id @default(cuid())
+  authorName     String
+  authorPhotoUrl String?
+  rating         Int      @default(5)
+  text           String   @db.Text
+  reviewUrl      String?
+  isActive       Boolean  @default(true)
+  order          Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 }
 
 model SeoSetting {
