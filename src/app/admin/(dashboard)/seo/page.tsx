@@ -3,6 +3,7 @@ import { AdminPage } from "@/components/admin/admin-page";
 import { FormInput, FormTextarea } from "@/components/admin/form-input";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { requireCapability } from "@/lib/admin-auth";
 import { getSeoSetting } from "@/lib/content";
 
 type PageProps = {
@@ -37,6 +38,7 @@ function SeoForm({
 }
 
 export default async function SeoPage({ searchParams }: PageProps) {
+  await requireCapability("manageSite");
   const params = await searchParams;
   const settings = await Promise.all(pages.map(([page]) => getSeoSetting(page)));
 

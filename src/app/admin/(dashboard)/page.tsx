@@ -11,7 +11,10 @@ import {
 import type { LucideIcon } from "lucide-react";
 
 import { AdminPage } from "@/components/admin/admin-page";
+import { InstitutionalEmailCard } from "@/components/admin/institutional-email-card";
 import { Card } from "@/components/ui/card";
+import { getCurrentAdminUser } from "@/lib/admin-auth";
+import { canAccessAdminPath } from "@/lib/admin-permissions";
 import {
   getBrands,
   getCarouselSlides,
@@ -30,20 +33,33 @@ const cards: Array<[string, string, LucideIcon, string]> = [
   ["SEO", "/admin/seo", Search, "Títulos, descrições e Open Graph."],
 ];
 
-export default async function AdminDashboardPage() {
-  const [settings, slides, brands, categories, faqs] = await Promise.all([
+type DashboardProps = {
+  searchParams: Promise<{ denied?: string }>;
+};
+
+export default async function AdminDashboardPage({ searchParams }: DashboardProps) {
+  const [params, currentUser, settings, slides, brands, categories, faqs] = await Promise.all([
+    searchParams,
+    getCurrentAdminUser(),
     getSiteSetting(),
     getCarouselSlides(false),
     getBrands(false),
     getCategories(false),
     getFaqItems(false),
   ]);
+  const visibleCards = cards.filter(([, href]) => canAccessAdminPath(currentUser.role, href));
 
   return (
     <AdminPage
       title="Dashboard"
       description="Atalhos para manter a landing institucional da Carro & Casa sem mexer em código."
     >
+      {params.denied === "1" ? (
+        <Card className="border-amber-300 bg-amber-50 p-4 text-sm font-medium text-amber-900">
+          Seu perfil não tem permissão para acessar aquela área.
+        </Card>
+      ) : null}
+
       <div className="grid gap-4 md:grid-cols-4">
         {[
           ["Slides", slides.length],
@@ -58,6 +74,8 @@ export default async function AdminDashboardPage() {
         ))}
       </div>
 
+      <InstitutionalEmailCard email={currentUser.institutionalEmail} />
+
       <Card className="p-5">
         <p className="text-sm font-semibold text-brand-dark">Status do botão do sistema</p>
         <p className="mt-2 text-sm leading-6 text-brand-dark/62">
@@ -68,7 +86,7 @@ export default async function AdminDashboardPage() {
       </Card>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {cards.map(([label, href, Icon, text]) => (
+        {visibleCards.map(([label, href, Icon, text]) => (
           <Link key={href} href={href}>
             <Card className="h-full p-5 transition hover:-translate-y-1 hover:border-brand/60">
               <Icon className="size-6 text-brand-dark" aria-hidden />

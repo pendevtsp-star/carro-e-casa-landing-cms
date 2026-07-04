@@ -3,6 +3,7 @@ import { AdminPage } from "@/components/admin/admin-page";
 import { FormInput, FormTextarea } from "@/components/admin/form-input";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { requireCapability } from "@/lib/admin-auth";
 import { getHero } from "@/lib/content";
 
 type PageProps = {
@@ -10,6 +11,7 @@ type PageProps = {
 };
 
 export default async function AdminHomePage({ searchParams }: PageProps) {
+  await requireCapability("manageContent");
   const [params, hero] = await Promise.all([searchParams, getHero()]);
 
   return (

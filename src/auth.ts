@@ -52,6 +52,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           name: user.name,
           email: user.email,
           role: user.role,
+          institutionalEmail: user.institutionalEmail,
         };
       },
     }),
@@ -60,12 +61,19 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     jwt({ token, user }) {
       if (user) {
         token.role = "role" in user ? user.role : "admin";
+        token.institutionalEmail =
+          "institutionalEmail" in user ? user.institutionalEmail : null;
       }
       return token;
     },
     session({ session, token }) {
       if (session.user) {
+        session.user.id = String(token.sub || "");
         session.user.role = String(token.role || "admin");
+        session.user.institutionalEmail =
+          typeof token.institutionalEmail === "string"
+            ? token.institutionalEmail
+            : null;
       }
       return session;
     },

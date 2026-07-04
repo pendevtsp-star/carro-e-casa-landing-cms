@@ -3,6 +3,7 @@ import { AdminPage } from "@/components/admin/admin-page";
 import { FormCheckbox, FormInput, FormTextarea } from "@/components/admin/form-input";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { requireCapability } from "@/lib/admin-auth";
 import { getCarouselSlides } from "@/lib/content";
 
 type PageProps = {
@@ -31,6 +32,7 @@ function SlideForm({ slide }: { slide?: Awaited<ReturnType<typeof getCarouselSli
 }
 
 export default async function CarrosselPage({ searchParams }: PageProps) {
+  await requireCapability("manageMedia");
   const [params, slides] = await Promise.all([searchParams, getCarouselSlides(false)]);
 
   return (

@@ -3,6 +3,7 @@ import { AdminPage } from "@/components/admin/admin-page";
 import { FormCheckbox, FormInput, FormTextarea } from "@/components/admin/form-input";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { requireCapability } from "@/lib/admin-auth";
 import { getCategories } from "@/lib/content";
 
 type PageProps = {
@@ -41,6 +42,7 @@ function CategoryForm({ category }: { category?: Awaited<ReturnType<typeof getCa
 }
 
 export default async function CategoriasPage({ searchParams }: PageProps) {
+  await requireCapability("manageContent");
   const [params, categories] = await Promise.all([searchParams, getCategories(false)]);
 
   return (

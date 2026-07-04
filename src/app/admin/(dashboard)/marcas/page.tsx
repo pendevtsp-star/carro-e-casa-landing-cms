@@ -3,6 +3,7 @@ import { AdminPage } from "@/components/admin/admin-page";
 import { FormCheckbox, FormInput, FormTextarea } from "@/components/admin/form-input";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { requireCapability } from "@/lib/admin-auth";
 import { getBrands } from "@/lib/content";
 import Image from "next/image";
 
@@ -46,6 +47,7 @@ function BrandForm({ brand }: { brand?: Awaited<ReturnType<typeof getBrands>>[nu
 }
 
 export default async function MarcasPage({ searchParams }: PageProps) {
+  await requireCapability("manageContent");
   const [params, brands] = await Promise.all([searchParams, getBrands(false)]);
 
   return (

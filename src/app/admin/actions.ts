@@ -9,7 +9,8 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { signIn, signOut } from "@/auth";
-import { requireAdmin } from "@/lib/admin-auth";
+import { requireCapability } from "@/lib/admin-auth";
+import { adminRoles } from "@/lib/admin-permissions";
 import { prisma } from "@/lib/prisma";
 import { getUploadRoot } from "@/lib/uploads";
 import { emptyToNull, formBool, formString, parseOrder } from "@/lib/utils";
@@ -73,7 +74,7 @@ export async function logoutAction() {
 }
 
 export async function updateSiteSettings(formData: FormData) {
-  await requireAdmin();
+  await requireCapability("manageSite");
 
   const parsed = z
     .object({
@@ -144,7 +145,7 @@ export async function updateSiteSettings(formData: FormData) {
 }
 
 export async function updateHero(formData: FormData) {
-  await requireAdmin();
+  await requireCapability("manageContent");
 
   const parsed = z
     .object({
@@ -183,7 +184,7 @@ export async function updateHero(formData: FormData) {
 }
 
 export async function saveCarouselSlide(formData: FormData) {
-  await requireAdmin();
+  await requireCapability("manageMedia");
 
   const data = {
     title: formString(formData, "title"),
@@ -215,14 +216,14 @@ export async function saveCarouselSlide(formData: FormData) {
 }
 
 export async function deleteCarouselSlide(formData: FormData) {
-  await requireAdmin();
+  await requireCapability("manageMedia");
   await prisma.carouselSlide.delete({ where: { id: formString(formData, "id") } });
   revalidatePublic();
   redirectSaved("/admin/carrossel");
 }
 
 export async function saveBrand(formData: FormData) {
-  await requireAdmin();
+  await requireCapability("manageContent");
 
   const data = {
     name: formString(formData, "name"),
@@ -247,14 +248,14 @@ export async function saveBrand(formData: FormData) {
 }
 
 export async function deleteBrand(formData: FormData) {
-  await requireAdmin();
+  await requireCapability("manageContent");
   await prisma.brand.delete({ where: { id: formString(formData, "id") } });
   revalidatePublic();
   redirectSaved("/admin/marcas");
 }
 
 export async function saveCategory(formData: FormData) {
-  await requireAdmin();
+  await requireCapability("manageContent");
 
   const data = {
     name: formString(formData, "name"),
@@ -280,14 +281,14 @@ export async function saveCategory(formData: FormData) {
 }
 
 export async function deleteCategory(formData: FormData) {
-  await requireAdmin();
+  await requireCapability("manageContent");
   await prisma.category.delete({ where: { id: formString(formData, "id") } });
   revalidatePublic();
   redirectSaved("/admin/categorias");
 }
 
 export async function saveFaqItem(formData: FormData) {
-  await requireAdmin();
+  await requireCapability("manageContent");
 
   const data = {
     question: formString(formData, "question"),
@@ -310,14 +311,14 @@ export async function saveFaqItem(formData: FormData) {
 }
 
 export async function deleteFaqItem(formData: FormData) {
-  await requireAdmin();
+  await requireCapability("manageContent");
   await prisma.fAQItem.delete({ where: { id: formString(formData, "id") } });
   revalidatePublic();
   redirectSaved("/admin/faq");
 }
 
 export async function updateLegalPage(formData: FormData) {
-  await requireAdmin();
+  await requireCapability("manageContent");
 
   const slug = formString(formData, "slug");
   const data = {
@@ -340,7 +341,7 @@ export async function updateLegalPage(formData: FormData) {
 }
 
 export async function updateSeoSetting(formData: FormData) {
-  await requireAdmin();
+  await requireCapability("manageSite");
 
   const page = formString(formData, "page");
   const data = {
@@ -363,7 +364,7 @@ export async function updateSeoSetting(formData: FormData) {
 }
 
 export async function uploadMedia(formData: FormData) {
-  await requireAdmin();
+  await requireCapability("manageMedia");
 
   const file = formData.get("file");
   if (!(file instanceof File) || file.size === 0) {
@@ -423,7 +424,7 @@ export async function uploadMedia(formData: FormData) {
 }
 
 export async function saveAdminUser(formData: FormData) {
-  await requireAdmin();
+  await requireCapability("manageUsers");
 
   const id = formString(formData, "id");
   const password = formString(formData, "password");
@@ -431,13 +432,15 @@ export async function saveAdminUser(formData: FormData) {
     name: formString(formData, "name"),
     email: formString(formData, "email").toLowerCase(),
     role: formString(formData, "role") || "admin",
+    institutionalEmail: emptyToNull(formData.get("institutionalEmail")),
     isActive: formBool(formData, "isActive"),
   };
 
   z.object({
     name: shortText,
     email: z.string().email(),
-    role: shortText,
+    role: z.enum(adminRoles),
+    institutionalEmail: z.string().email().nullable(),
   }).parse(data);
 
   if (id) {
@@ -464,10 +467,10 @@ export async function saveAdminUser(formData: FormData) {
 }
 
 export async function deleteAdminUser(formData: FormData) {
-  const session = await requireAdmin();
+  const session = await requireCapability("manageUsers");
   const id = formString(formData, "id");
   const user = await prisma.adminUser.findUnique({ where: { id } });
-  if (user?.email === session.user?.email) {
+  if (user?.email === session.email) {
     throw new Error("Você não pode excluir o próprio usuário.");
   }
   await prisma.adminUser.delete({ where: { id } });

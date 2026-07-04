@@ -3,6 +3,7 @@ import Image from "next/image";
 import { AdminPage } from "@/components/admin/admin-page";
 import { ImageUpload } from "@/components/admin/image-upload";
 import { Card } from "@/components/ui/card";
+import { requireCapability } from "@/lib/admin-auth";
 import { getMediaAssets } from "@/lib/content";
 
 type PageProps = {
@@ -10,6 +11,7 @@ type PageProps = {
 };
 
 export default async function MidiaPage({ searchParams }: PageProps) {
+  await requireCapability("manageMedia");
   const [params, assets] = await Promise.all([searchParams, getMediaAssets()]);
 
   return (

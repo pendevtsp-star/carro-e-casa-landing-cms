@@ -3,6 +3,7 @@ import { AdminPage } from "@/components/admin/admin-page";
 import { FormInput, FormTextarea } from "@/components/admin/form-input";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { requireCapability } from "@/lib/admin-auth";
 import { getLegalPage } from "@/lib/content";
 
 type PageProps = {
@@ -27,6 +28,7 @@ function LegalForm({
 }
 
 export default async function PaginasLegaisPage({ searchParams }: PageProps) {
+  await requireCapability("manageContent");
   const [params, termos, privacidade] = await Promise.all([
     searchParams,
     getLegalPage("termos-de-uso"),

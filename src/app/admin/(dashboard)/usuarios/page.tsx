@@ -1,8 +1,10 @@
 import { deleteAdminUser, saveAdminUser } from "@/app/admin/actions";
 import { AdminPage } from "@/components/admin/admin-page";
-import { FormCheckbox, FormInput } from "@/components/admin/form-input";
+import { FormCheckbox, FormInput, FormSelect } from "@/components/admin/form-input";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { requireCapability } from "@/lib/admin-auth";
+import { adminRoles, roleDescriptions, roleLabels } from "@/lib/admin-permissions";
 import { prisma } from "@/lib/prisma";
 
 type PageProps = {
@@ -18,13 +20,31 @@ async function getUsers() {
 type User = Awaited<ReturnType<typeof getUsers>>[number];
 
 function UserForm({ user }: { user?: User }) {
+  const roleOptions = adminRoles.map((role) => ({
+    value: role,
+    label: roleLabels[role],
+  }));
+
   return (
     <form action={saveAdminUser} className="grid gap-4 rounded-lg border border-brand-dark/10 bg-white p-5">
       {user ? <input type="hidden" name="id" value={user.id} /> : null}
       <div className="grid gap-4 md:grid-cols-2">
         <FormInput label="Nome" name="name" defaultValue={user?.name} required />
         <FormInput label="E-mail" name="email" type="email" defaultValue={user?.email} required />
-        <FormInput label="Papel" name="role" defaultValue={user?.role ?? "admin"} required />
+        <FormInput
+          label="E-mail institucional"
+          name="institutionalEmail"
+          type="email"
+          defaultValue={user?.institutionalEmail}
+          help="Opcional. Aparece no card Meu e-mail institucional do usuário."
+        />
+        <FormSelect
+          label="Perfil de acesso"
+          name="role"
+          defaultValue={user?.role ?? "editor"}
+          options={roleOptions}
+          required
+        />
         <FormInput label={user ? "Nova senha" : "Senha"} name="password" type="password" help={user ? "Preencha apenas para trocar." : "Obrigatória para novo usuário."} />
       </div>
       <FormCheckbox label="Usuário ativo" name="isActive" defaultChecked={user?.isActive ?? true} />
@@ -34,6 +54,7 @@ function UserForm({ user }: { user?: User }) {
 }
 
 export default async function UsuariosPage({ searchParams }: PageProps) {
+  await requireCapability("manageUsers");
   const [params, users] = await Promise.all([searchParams, getUsers()]);
 
   return (
@@ -42,6 +63,17 @@ export default async function UsuariosPage({ searchParams }: PageProps) {
       description="Gerencie acessos administrativos simples do painel."
       saved={params.saved === "1"}
     >
+      <Card className="grid gap-3 p-5">
+        <h2 className="text-lg font-semibold text-brand-dark">Perfis disponíveis</h2>
+        <div className="grid gap-3 md:grid-cols-2">
+          {adminRoles.map((role) => (
+            <div key={role} className="rounded-md border border-brand-dark/10 bg-white p-4">
+              <p className="text-sm font-semibold text-brand-dark">{roleLabels[role]}</p>
+              <p className="mt-1 text-xs leading-5 text-brand-dark/55">{roleDescriptions[role]}</p>
+            </div>
+          ))}
+        </div>
+      </Card>
       <Card className="p-5">
         <h2 className="mb-4 text-lg font-semibold text-brand-dark">Novo usuário</h2>
         <UserForm />

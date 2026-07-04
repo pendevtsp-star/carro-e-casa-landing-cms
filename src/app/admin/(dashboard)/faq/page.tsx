@@ -3,6 +3,7 @@ import { AdminPage } from "@/components/admin/admin-page";
 import { FormCheckbox, FormInput, FormTextarea } from "@/components/admin/form-input";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { requireCapability } from "@/lib/admin-auth";
 import { getFaqItems } from "@/lib/content";
 
 type PageProps = {
@@ -25,6 +26,7 @@ function FaqForm({ item }: { item?: Awaited<ReturnType<typeof getFaqItems>>[numb
 }
 
 export default async function FaqAdminPage({ searchParams }: PageProps) {
+  await requireCapability("manageContent");
   const [params, items] = await Promise.all([searchParams, getFaqItems(false)]);
 
   return (

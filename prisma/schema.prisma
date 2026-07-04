@@ -8,14 +8,15 @@ datasource db {
 }
 
 model AdminUser {
-  id           String   @id @default(cuid())
-  name         String
-  email        String   @unique
-  passwordHash String
-  role         String   @default("admin")
-  isActive     Boolean  @default(true)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id                 String   @id @default(cuid())
+  name               String
+  email              String   @unique
+  passwordHash       String
+  role               String   @default("admin")
+  institutionalEmail String?
+  isActive           Boolean  @default(true)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 }
 
 model SiteSetting {

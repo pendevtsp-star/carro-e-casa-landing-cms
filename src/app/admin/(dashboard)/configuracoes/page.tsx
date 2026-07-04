@@ -3,6 +3,7 @@ import { AdminPage } from "@/components/admin/admin-page";
 import { FormCheckbox, FormInput, FormTextarea } from "@/components/admin/form-input";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { requireCapability } from "@/lib/admin-auth";
 import { getSiteSetting } from "@/lib/content";
 
 type PageProps = {
@@ -10,6 +11,7 @@ type PageProps = {
 };
 
 export default async function ConfiguracoesPage({ searchParams }: PageProps) {
+  await requireCapability("manageSite");
   const [params, settings] = await Promise.all([searchParams, getSiteSetting()]);
 
   return (

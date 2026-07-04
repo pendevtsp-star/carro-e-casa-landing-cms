@@ -17,6 +17,7 @@ import {
 import type { LucideIcon } from "lucide-react";
 
 import { logoutAction } from "@/app/admin/actions";
+import { canAccessAdminPath } from "@/lib/admin-permissions";
 
 const links: Array<[string, string, LucideIcon]> = [
   ["Dashboard", "/admin", LayoutDashboard],
@@ -32,7 +33,9 @@ const links: Array<[string, string, LucideIcon]> = [
   ["Usuários", "/admin/usuarios", Users],
 ];
 
-export function AdminSidebar() {
+export function AdminSidebar({ role }: { role: string }) {
+  const visibleLinks = links.filter(([, href]) => canAccessAdminPath(role, href));
+
   return (
     <aside className="border-r border-brand-dark/10 bg-white lg:min-h-screen">
       <div className="sticky top-0 flex h-full flex-col gap-6 p-4">
@@ -41,7 +44,7 @@ export function AdminSidebar() {
           <span className="font-semibold">Carro & Casa</span>
         </Link>
         <nav className="grid gap-1" aria-label="Admin">
-          {links.map(([label, href, Icon]) => (
+          {visibleLinks.map(([label, href, Icon]) => (
             <Link
               key={href}
               href={href as string}

@@ -88,3 +88,32 @@ export function FormCheckbox({
     </label>
   );
 }
+
+export function FormSelect({
+  label,
+  name,
+  defaultValue,
+  help,
+  required,
+  className,
+  options,
+}: BaseProps & { options: Array<{ label: string; value: string }> }) {
+  return (
+    <label className={cn("grid gap-2", className)}>
+      <span className="text-sm font-semibold text-brand-dark">{label}</span>
+      <select
+        name={name}
+        defaultValue={defaultValue ?? ""}
+        required={required}
+        className="h-11 rounded-md border border-brand-dark/12 bg-white px-3 text-sm text-brand-dark shadow-sm transition focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/25"
+      >
+        {options.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+      {help ? <span className="text-xs leading-5 text-brand-dark/55">{help}</span> : null}
+    </label>
+  );
+}
