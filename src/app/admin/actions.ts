@@ -41,6 +41,10 @@ function redirectSaved(pathname: string) {
   redirect(`${pathname}?saved=1`);
 }
 
+function redirectAdminError(pathname: string, message: string) {
+  redirect(`${pathname}?google_error=${encodeURIComponent(message)}`);
+}
+
 async function saveImageFromForm(file: FormDataEntryValue | null, altText?: string | null) {
   if (!(file instanceof File) || file.size === 0) {
     return null;
@@ -381,6 +385,24 @@ type GooglePlaceDetailsResponse = {
   reviews?: GooglePlaceReview[];
 };
 
+type GoogleLegacyPlaceReview = {
+  author_name?: string;
+  profile_photo_url?: string;
+  rating?: number;
+  text?: string;
+  author_url?: string;
+};
+
+type GoogleLegacyPlaceDetailsResponse = {
+  status?: string;
+  error_message?: string;
+  result?: {
+    rating?: number;
+    user_ratings_total?: number;
+    reviews?: GoogleLegacyPlaceReview[];
+  };
+};
+
 async function syncGoogleReviewsFromPlaces() {
   const apiKey = process.env.GOOGLE_PLACES_API_KEY;
   const placeId = process.env.GOOGLE_PLACE_ID;
@@ -397,27 +419,85 @@ async function syncGoogleReviewsFromPlaces() {
     cache: "no-store",
   });
 
-  if (!response.ok) {
-    let message = `Places API retornou erro ${response.status}.`;
-    try {
-      const body = (await response.json()) as { error?: { message?: string } };
-      if (body.error?.message) {
-        message = `Places API retornou erro ${response.status}: ${body.error.message}`;
-      }
-    } catch {
-      // Keep the generic status message when Google does not return JSON.
-    }
-    throw new Error(message);
+  if (response.ok) {
+    const data = (await response.json()) as GooglePlaceDetailsResponse;
+    const reviews = (data.reviews ?? [])
+      .map((review, index) => ({
+        authorName: review.authorAttribution?.displayName || "Cliente Google",
+        authorPhotoUrl: review.authorAttribution?.photoUri || null,
+        rating: Math.min(5, Math.max(1, Math.round(review.rating || 5))),
+        text: review.text?.text?.trim() || "",
+        reviewUrl: review.authorAttribution?.uri || null,
+        isActive: true,
+        order: index + 1,
+      }))
+      .filter((review) => review.text.length > 0);
+
+    await prisma.$transaction([
+      prisma.googleReview.deleteMany({}),
+      prisma.googleReviewSetting.upsert({
+        where: { id: "main" },
+        update: {
+          ratingAverage: data.rating || 5,
+          reviewCount: data.userRatingCount || reviews.length,
+          isEnabled: true,
+        },
+        create: {
+          id: "main",
+          ratingAverage: data.rating || 5,
+          reviewCount: data.userRatingCount || reviews.length,
+          isEnabled: true,
+        },
+      }),
+      prisma.googleIntegration.upsert({
+        where: { id: "main" },
+        update: { lastSyncedAt: new Date() },
+        create: { id: "main", lastSyncedAt: new Date() },
+      }),
+      ...(reviews.length ? [prisma.googleReview.createMany({ data: reviews })] : []),
+    ]);
+
+    return true;
   }
 
-  const data = (await response.json()) as GooglePlaceDetailsResponse;
+  let newPlacesMessage = `Places API retornou erro ${response.status}.`;
+  try {
+    const body = (await response.json()) as { error?: { message?: string } };
+    if (body.error?.message) {
+      newPlacesMessage = `Places API retornou erro ${response.status}: ${body.error.message}`;
+    }
+  } catch {
+    // Keep the generic status message when Google does not return JSON.
+  }
+
+  const legacyUrl = new URL("https://maps.googleapis.com/maps/api/place/details/json");
+  legacyUrl.searchParams.set("place_id", placeId);
+  legacyUrl.searchParams.set("fields", "rating,user_ratings_total,reviews");
+  legacyUrl.searchParams.set("language", "pt-BR");
+  legacyUrl.searchParams.set("key", apiKey);
+
+  const legacyResponse = await fetch(legacyUrl, { cache: "no-store" });
+  if (!legacyResponse.ok) {
+    throw new Error(newPlacesMessage);
+  }
+
+  const legacyData = (await legacyResponse.json()) as GoogleLegacyPlaceDetailsResponse;
+  if (legacyData.status && legacyData.status !== "OK") {
+    throw new Error(
+      legacyData.error_message
+        ? `Places API retornou ${legacyData.status}: ${legacyData.error_message}`
+        : newPlacesMessage,
+    );
+  }
+
+  const data = legacyData.result ?? {};
   const reviews = (data.reviews ?? [])
     .map((review, index) => ({
-      authorName: review.authorAttribution?.displayName || "Cliente Google",
-      authorPhotoUrl: review.authorAttribution?.photoUri || null,
+      authorName: review.author_name || "Cliente Google",
+      authorPhotoUrl: review.profile_photo_url || null,
       rating: Math.min(5, Math.max(1, Math.round(review.rating || 5))),
-      text: review.text?.text?.trim() || "",
-      reviewUrl: review.authorAttribution?.uri || null,
+      text: review.text?.trim() || "",
+      reviewUrl: review.author_url || null,
       isActive: true,
       order: index + 1,
     }))
@@ -429,13 +509,13 @@ async function syncGoogleReviewsFromPlaces() {
       where: { id: "main" },
       update: {
         ratingAverage: data.rating || 5,
-        reviewCount: data.userRatingCount || reviews.length,
+        reviewCount: data.user_ratings_total || reviews.length,
         isEnabled: true,
       },
       create: {
         id: "main",
         ratingAverage: data.rating || 5,
-        reviewCount: data.userRatingCount || reviews.length,
+        reviewCount: data.user_ratings_total || reviews.length,
         isEnabled: true,
       },
     }),
@@ -512,17 +592,27 @@ async function syncGoogleReviewsFromBusinessProfile() {
 export async function syncGoogleReviews() {
   await requireCapability("manageContent");
 
-  if (await syncGoogleReviewsFromPlaces()) {
-    revalidatePublic();
-    redirectSaved("/admin/avaliacoes");
-  }
+  try {
+    if (await syncGoogleReviewsFromPlaces()) {
+      revalidatePublic();
+      redirectSaved("/admin/avaliacoes");
+    }
 
-  if (await syncGoogleReviewsFromBusinessProfile()) {
-    revalidatePublic();
-    redirectSaved("/admin/avaliacoes");
-  }
+    if (await syncGoogleReviewsFromBusinessProfile()) {
+      revalidatePublic();
+      redirectSaved("/admin/avaliacoes");
+    }
 
-  throw new Error("Configure GOOGLE_PLACES_API_KEY e GOOGLE_PLACE_ID no .env da VPS.");
+    redirectAdminError("/admin/avaliacoes", "Configure GOOGLE_PLACES_API_KEY e GOOGLE_PLACE_ID no .env da VPS.");
+  } catch (error) {
+    if (error instanceof Error && error.message === "NEXT_REDIRECT") {
+      throw error;
+    }
+    redirectAdminError(
+      "/admin/avaliacoes",
+      error instanceof Error ? error.message : "Não foi possível sincronizar as avaliações do Google.",
+    );
+  }
 }
 
 export async function disconnectGoogleIntegration() {
