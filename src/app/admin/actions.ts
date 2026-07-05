@@ -381,70 +381,12 @@ type GooglePlaceDetailsResponse = {
   reviews?: GooglePlaceReview[];
 };
 
-export async function syncGoogleReviews() {
-  await requireCapability("manageContent");
-
-  let integration = await prisma.googleIntegration.findUnique({ where: { id: "main" } });
-  if (integration?.encryptedRefreshToken && (!integration.accountName || !integration.locationName)) {
-    const accessToken = await getGoogleAccessToken();
-    const { account, location } = await findFirstBusinessLocation(accessToken);
-    integration = await prisma.googleIntegration.update({
-      where: { id: "main" },
-      data: {
-        accountName: account.name,
-        accountDisplayName: account.accountName || account.name,
-        locationName: location.name,
-        locationTitle: location.title || location.name,
-      },
-    });
-  }
-
-  if (integration?.encryptedRefreshToken && integration.accountName && integration.locationName) {
-    const data = await fetchBusinessProfileReviews();
-    const reviews = (data.reviews ?? [])
-      .map((review, index) => ({
-        authorName: review.reviewer?.displayName || "Cliente Google",
-        authorPhotoUrl: review.reviewer?.profilePhotoUrl || null,
-        rating: starRatingToNumber(review.starRating),
-        text: review.comment?.trim() || "",
-        reviewUrl: null,
-        isActive: true,
-        order: index + 1,
-      }))
-      .filter((review) => review.text.length > 0);
-
-    await prisma.$transaction([
-      prisma.googleReview.deleteMany({}),
-      prisma.googleReviewSetting.upsert({
-        where: { id: "main" },
-        update: {
-          ratingAverage: data.averageRating || 5,
-          reviewCount: data.totalReviewCount || reviews.length,
-          isEnabled: true,
-        },
-        create: {
-          id: "main",
-          ratingAverage: data.averageRating || 5,
-          reviewCount: data.totalReviewCount || reviews.length,
-          isEnabled: true,
-        },
-      }),
-      prisma.googleIntegration.update({
-        where: { id: "main" },
-        data: { lastSyncedAt: new Date() },
-      }),
-      ...(reviews.length ? [prisma.googleReview.createMany({ data: reviews })] : []),
-    ]);
-
-    revalidatePublic();
-    redirectSaved("/admin/avaliacoes");
-  }
-
+async function syncGoogleReviewsFromPlaces() {
   const apiKey = process.env.GOOGLE_PLACES_API_KEY;
   const placeId = process.env.GOOGLE_PLACE_ID;
 
   if (!apiKey || !placeId) {
-    throw new Error("Configure GOOGLE_PLACES_API_KEY e GOOGLE_PLACE_ID no .env da VPS.");
+    return false;
   }
 
   const response = await fetch(`https://places.googleapis.com/v1/places/${placeId}?languageCode=pt-BR`, {
@@ -456,7 +398,16 @@ export async function syncGoogleReviews() {
   });
 
   if (!response.ok) {
-    throw new Error("Não foi possível buscar avaliações reais do Google.");
+    let message = `Places API retornou erro ${response.status}.`;
+    try {
+      const body = (await response.json()) as { error?: { message?: string } };
+      if (body.error?.message) {
+        message = `Places API retornou erro ${response.status}: ${body.error.message}`;
+      }
+    } catch {
+      // Keep the generic status message when Google does not return JSON.
+    }
+    throw new Error(message);
   }
 
   const data = (await response.json()) as GooglePlaceDetailsResponse;
@@ -488,11 +439,90 @@ export async function syncGoogleReviews() {
         isEnabled: true,
       },
     }),
+    prisma.googleIntegration.upsert({
+      where: { id: "main" },
+      update: { lastSyncedAt: new Date() },
+      create: { id: "main", lastSyncedAt: new Date() },
+    }),
     ...(reviews.length ? [prisma.googleReview.createMany({ data: reviews })] : []),
   ]);
 
-  revalidatePublic();
-  redirectSaved("/admin/avaliacoes");
+  return true;
+}
+
+async function syncGoogleReviewsFromBusinessProfile() {
+  let integration = await prisma.googleIntegration.findUnique({ where: { id: "main" } });
+  if (!integration?.encryptedRefreshToken) return false;
+
+  if (!integration.accountName || !integration.locationName) {
+    const accessToken = await getGoogleAccessToken();
+    const { account, location } = await findFirstBusinessLocation(accessToken);
+    integration = await prisma.googleIntegration.update({
+      where: { id: "main" },
+      data: {
+        accountName: account.name,
+        accountDisplayName: account.accountName || account.name,
+        locationName: location.name,
+        locationTitle: location.title || location.name,
+      },
+    });
+  }
+
+  if (!integration.accountName || !integration.locationName) return false;
+
+  const data = await fetchBusinessProfileReviews();
+  const reviews = (data.reviews ?? [])
+    .map((review, index) => ({
+      authorName: review.reviewer?.displayName || "Cliente Google",
+      authorPhotoUrl: review.reviewer?.profilePhotoUrl || null,
+      rating: starRatingToNumber(review.starRating),
+      text: review.comment?.trim() || "",
+      reviewUrl: null,
+      isActive: true,
+      order: index + 1,
+    }))
+    .filter((review) => review.text.length > 0);
+
+  await prisma.$transaction([
+    prisma.googleReview.deleteMany({}),
+    prisma.googleReviewSetting.upsert({
+      where: { id: "main" },
+      update: {
+        ratingAverage: data.averageRating || 5,
+        reviewCount: data.totalReviewCount || reviews.length,
+        isEnabled: true,
+      },
+      create: {
+        id: "main",
+        ratingAverage: data.averageRating || 5,
+        reviewCount: data.totalReviewCount || reviews.length,
+        isEnabled: true,
+      },
+    }),
+    prisma.googleIntegration.update({
+      where: { id: "main" },
+      data: { lastSyncedAt: new Date() },
+    }),
+    ...(reviews.length ? [prisma.googleReview.createMany({ data: reviews })] : []),
+  ]);
+
+  return true;
+}
+
+export async function syncGoogleReviews() {
+  await requireCapability("manageContent");
+
+  if (await syncGoogleReviewsFromPlaces()) {
+    revalidatePublic();
+    redirectSaved("/admin/avaliacoes");
+  }
+
+  if (await syncGoogleReviewsFromBusinessProfile()) {
+    revalidatePublic();
+    redirectSaved("/admin/avaliacoes");
+  }
+
+  throw new Error("Configure GOOGLE_PLACES_API_KEY e GOOGLE_PLACE_ID no .env da VPS.");
 }
 
 export async function disconnectGoogleIntegration() {

@@ -86,10 +86,10 @@ export default async function AvaliacoesPage({ searchParams }: PageProps) {
       <Card className="p-5">
         <div className="grid gap-5 lg:grid-cols-[1fr_auto] lg:items-center">
           <div>
-            <h2 className="text-lg font-semibold text-brand-dark">Integração com Google Business Profile</h2>
+            <h2 className="text-lg font-semibold text-brand-dark">Sincronização com Google</h2>
             <p className="mt-2 text-sm leading-6 text-brand-dark/62">
-              As avaliações exibidas na landing devem vir do perfil real da empresa no Google.
-              Conecte uma conta Google que seja proprietária ou gerente do Perfil da Empresa.
+              O modo prático usa a Places API para buscar avaliações públicas reais do perfil.
+              A integração OAuth Business Profile fica como alternativa quando a API for liberada.
             </p>
             {googleIntegration ? (
               <div className="mt-4 grid gap-1 text-sm text-brand-dark/62">
@@ -114,8 +114,7 @@ export default async function AvaliacoesPage({ searchParams }: PageProps) {
               </div>
             ) : (
               <p className="mt-2 text-xs leading-5 text-brand-dark/52">
-                Requer `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` e redirect URI configurados no
-                Google Cloud e na VPS.
+                Para o modo prático, configure `GOOGLE_PLACES_API_KEY` e `GOOGLE_PLACE_ID`.
               </p>
             )}
           </div>
@@ -130,7 +129,9 @@ export default async function AvaliacoesPage({ searchParams }: PageProps) {
                 </form>
               </>
             ) : (
-              <Button href="/api/google/connect">Conectar com Google</Button>
+              <form action={syncGoogleReviews}>
+                <Button type="submit">Sincronizar via Places API</Button>
+              </form>
             )}
           </div>
         </div>
