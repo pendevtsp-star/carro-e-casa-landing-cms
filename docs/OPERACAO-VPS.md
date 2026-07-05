@@ -95,6 +95,6 @@ done
 ## CMS
 
 - Admin: `https://lojacarroecasa.com.br/admin`
-- Avaliacoes Google: sincronizacao em `Admin > Avaliacoes` usando dados reais do perfil no Google. Requer `GOOGLE_PLACES_API_KEY` e `GOOGLE_PLACE_ID` no `.env`.
+- Avaliacoes Google: sincronizacao em `Admin > Avaliacoes` usando dados reais do perfil no Google. Preferencialmente usa OAuth Business Profile com `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` e `GOOGLE_REDIRECT_URI`; `GOOGLE_PLACES_API_KEY` e `GOOGLE_PLACE_ID` ficam como fallback.
 - E-mails institucionais: cada usuario do admin pode ter um e-mail associado para abrir o Webmail da LocaWeb pelo dashboard.
 - Usuarios: mantenha `owner/admin` apenas para socios ou pessoas com responsabilidade operacional. Use `editor` ou `media` para social media.

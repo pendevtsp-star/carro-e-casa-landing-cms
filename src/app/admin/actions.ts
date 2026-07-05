@@ -11,6 +11,10 @@ import { z } from "zod";
 import { signIn, signOut } from "@/auth";
 import { requireCapability } from "@/lib/admin-auth";
 import { adminRoles } from "@/lib/admin-permissions";
+import {
+  fetchBusinessProfileReviews,
+  starRatingToNumber,
+} from "@/lib/google-business";
 import { prisma } from "@/lib/prisma";
 import { getUploadRoot } from "@/lib/uploads";
 import { emptyToNull, formBool, formString, parseOrder } from "@/lib/utils";
@@ -378,6 +382,48 @@ type GooglePlaceDetailsResponse = {
 export async function syncGoogleReviews() {
   await requireCapability("manageContent");
 
+  const integration = await prisma.googleIntegration.findUnique({ where: { id: "main" } });
+  if (integration?.encryptedRefreshToken && integration.accountName && integration.locationName) {
+    const data = await fetchBusinessProfileReviews();
+    const reviews = (data.reviews ?? [])
+      .map((review, index) => ({
+        authorName: review.reviewer?.displayName || "Cliente Google",
+        authorPhotoUrl: review.reviewer?.profilePhotoUrl || null,
+        rating: starRatingToNumber(review.starRating),
+        text: review.comment?.trim() || "",
+        reviewUrl: null,
+        isActive: true,
+        order: index + 1,
+      }))
+      .filter((review) => review.text.length > 0);
+
+    await prisma.$transaction([
+      prisma.googleReview.deleteMany({}),
+      prisma.googleReviewSetting.upsert({
+        where: { id: "main" },
+        update: {
+          ratingAverage: data.averageRating || 5,
+          reviewCount: data.totalReviewCount || reviews.length,
+          isEnabled: true,
+        },
+        create: {
+          id: "main",
+          ratingAverage: data.averageRating || 5,
+          reviewCount: data.totalReviewCount || reviews.length,
+          isEnabled: true,
+        },
+      }),
+      prisma.googleIntegration.update({
+        where: { id: "main" },
+        data: { lastSyncedAt: new Date() },
+      }),
+      ...(reviews.length ? [prisma.googleReview.createMany({ data: reviews })] : []),
+    ]);
+
+    revalidatePublic();
+    redirectSaved("/admin/avaliacoes");
+  }
+
   const apiKey = process.env.GOOGLE_PLACES_API_KEY;
   const placeId = process.env.GOOGLE_PLACE_ID;
 
@@ -430,6 +476,13 @@ export async function syncGoogleReviews() {
   ]);
 
   revalidatePublic();
+  redirectSaved("/admin/avaliacoes");
+}
+
+export async function disconnectGoogleIntegration() {
+  await requireCapability("manageContent");
+  await prisma.googleIntegration.deleteMany({ where: { id: "main" } });
+  revalidatePath("/admin/avaliacoes");
   redirectSaved("/admin/avaliacoes");
 }
 

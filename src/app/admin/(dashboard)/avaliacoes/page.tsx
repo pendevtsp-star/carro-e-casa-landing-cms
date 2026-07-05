@@ -1,4 +1,5 @@
 import {
+  disconnectGoogleIntegration,
   syncGoogleReviews,
   updateGoogleReviewSetting,
 } from "@/app/admin/actions";
@@ -7,10 +8,10 @@ import { FormCheckbox, FormInput, FormTextarea } from "@/components/admin/form-i
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { requireCapability } from "@/lib/admin-auth";
-import { getGoogleReviewSetting, getGoogleReviews } from "@/lib/content";
+import { getGoogleIntegration, getGoogleReviewSetting, getGoogleReviews } from "@/lib/content";
 
 type PageProps = {
-  searchParams: Promise<{ saved?: string }>;
+  searchParams: Promise<{ saved?: string; google_connected?: string; google_error?: string }>;
 };
 
 type Review = Awaited<ReturnType<typeof getGoogleReviews>>[number];
@@ -22,13 +23,25 @@ export default async function AvaliacoesPage({ searchParams }: PageProps) {
     getGoogleReviewSetting(),
     getGoogleReviews(false),
   ]);
+  const googleIntegration = await getGoogleIntegration();
 
   return (
     <AdminPage
       title="Avaliações Google"
-      description="Gerencie a seção pública de avaliações. Por enquanto, o cadastro é manual e preparado para uma integração oficial futura."
+      description="Conecte o Perfil da Empresa no Google e sincronize avaliações reais para a landing."
       saved={params.saved === "1"}
     >
+      {params.google_connected === "1" ? (
+        <Card className="border-emerald-300 bg-emerald-50 p-4 text-sm font-medium text-emerald-900">
+          Perfil Google conectado com sucesso.
+        </Card>
+      ) : null}
+      {params.google_error ? (
+        <Card className="border-red-200 bg-red-50 p-4 text-sm font-medium text-red-800">
+          Não foi possível conectar ao Google: {params.google_error}
+        </Card>
+      ) : null}
+
       <Card className="p-5">
         <h2 className="mb-4 text-lg font-semibold text-brand-dark">Configuração da seção</h2>
         <form action={updateGoogleReviewSetting} className="grid gap-4">
@@ -73,19 +86,52 @@ export default async function AvaliacoesPage({ searchParams }: PageProps) {
       <Card className="p-5">
         <div className="grid gap-5 lg:grid-cols-[1fr_auto] lg:items-center">
           <div>
-            <h2 className="text-lg font-semibold text-brand-dark">Sincronização com Google</h2>
+            <h2 className="text-lg font-semibold text-brand-dark">Integração com Google Business Profile</h2>
             <p className="mt-2 text-sm leading-6 text-brand-dark/62">
               As avaliações exibidas na landing devem vir do perfil real da empresa no Google.
-              A sincronização usa a API oficial do Google Places e substitui a lista local pelos
-              comentários retornados pelo perfil.
+              Conecte uma conta Google que seja proprietária ou gerente do Perfil da Empresa.
             </p>
-            <p className="mt-2 text-xs leading-5 text-brand-dark/52">
-              Requer `GOOGLE_PLACES_API_KEY` e `GOOGLE_PLACE_ID` configurados no ambiente da VPS.
-            </p>
+            {googleIntegration ? (
+              <div className="mt-4 grid gap-1 text-sm text-brand-dark/62">
+                <p>
+                  <strong className="text-brand-dark">Status:</strong> conectado
+                </p>
+                <p>
+                  <strong className="text-brand-dark">Conta:</strong>{" "}
+                  {googleIntegration.accountDisplayName || "Conta Google"}
+                </p>
+                <p>
+                  <strong className="text-brand-dark">Local:</strong>{" "}
+                  {googleIntegration.locationTitle || "Local selecionado"}
+                </p>
+                <p>
+                  <strong className="text-brand-dark">Última sincronização:</strong>{" "}
+                  {googleIntegration.lastSyncedAt
+                    ? googleIntegration.lastSyncedAt.toLocaleString("pt-BR")
+                    : "ainda não sincronizado"}
+                </p>
+              </div>
+            ) : (
+              <p className="mt-2 text-xs leading-5 text-brand-dark/52">
+                Requer `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` e redirect URI configurados no
+                Google Cloud e na VPS.
+              </p>
+            )}
           </div>
-          <form action={syncGoogleReviews}>
-            <Button type="submit">Sincronizar avaliações reais</Button>
-          </form>
+          <div className="flex flex-wrap gap-3 lg:justify-end">
+            {googleIntegration ? (
+              <>
+                <form action={syncGoogleReviews}>
+                  <Button type="submit">Sincronizar avaliações reais</Button>
+                </form>
+                <form action={disconnectGoogleIntegration}>
+                  <Button type="submit" variant="secondary">Desconectar</Button>
+                </form>
+              </>
+            ) : (
+              <Button href="/api/google/connect">Conectar com Google</Button>
+            )}
+          </div>
         </div>
       </Card>
 

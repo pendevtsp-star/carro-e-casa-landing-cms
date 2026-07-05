@@ -47,6 +47,9 @@ ADMIN_SEED_PASSWORD="troque-esta-senha"
 UPLOAD_DIR="./uploads"
 GOOGLE_PLACES_API_KEY=""
 GOOGLE_PLACE_ID=""
+GOOGLE_CLIENT_ID=""
+GOOGLE_CLIENT_SECRET=""
+GOOGLE_REDIRECT_URI="https://lojacarroecasa.com.br/api/google/callback"
 ```
 
 4. Suba um PostgreSQL local ou use Docker:

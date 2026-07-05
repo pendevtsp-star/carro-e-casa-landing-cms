@@ -160,6 +160,21 @@ model GoogleReview {
   updatedAt      DateTime @updatedAt
 }
 
+model GoogleIntegration {
+  id                    String    @id @default("main")
+  googleAccountEmail    String?
+  accountName           String?
+  accountDisplayName    String?
+  locationName          String?
+  locationTitle         String?
+  encryptedAccessToken  String?   @db.Text
+  encryptedRefreshToken String?   @db.Text
+  accessTokenExpiresAt  DateTime?
+  lastSyncedAt          DateTime?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+}
+
 model SeoSetting {
   id          String   @id @default(cuid())
   page        String   @unique

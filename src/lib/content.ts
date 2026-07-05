@@ -91,6 +91,23 @@ export const getGoogleReviews = cache(async (activeOnly = true) => {
   );
 });
 
+export const getGoogleIntegration = cache(async () => {
+  return dbOrFallback(
+    async () =>
+      prisma.googleIntegration.findUnique({
+        where: { id: "main" },
+        select: {
+          googleAccountEmail: true,
+          accountDisplayName: true,
+          locationTitle: true,
+          lastSyncedAt: true,
+          createdAt: true,
+        },
+      }),
+    null,
+  );
+});
+
 export const getCategories = cache(async (activeOnly = true) => {
   return dbOrFallback(
     async () =>
