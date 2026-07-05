@@ -4,7 +4,10 @@ import { NextResponse } from "next/server";
 import { exchangeCodeForTokens, saveGoogleConnection } from "@/lib/google-business";
 
 function adminReviewsUrl(params?: Record<string, string>) {
-  const url = new URL("/admin/avaliacoes", process.env.NEXT_PUBLIC_SITE_URL);
+  const url = new URL(
+    "/admin/avaliacoes",
+    process.env.NEXT_PUBLIC_SITE_URL || "https://lojacarroecasa.com.br",
+  );
   if (params) {
     Object.entries(params).forEach(([key, value]) => url.searchParams.set(key, value));
   }

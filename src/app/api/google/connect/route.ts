@@ -8,19 +8,27 @@ import { buildGoogleOAuthUrl } from "@/lib/google-business";
 
 export async function GET() {
   const session = await auth();
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://lojacarroecasa.com.br";
   if (!session?.user?.email) {
-    return NextResponse.redirect(new URL("/admin/login", process.env.NEXT_PUBLIC_SITE_URL));
+    return NextResponse.redirect(new URL("/admin/login", baseUrl));
   }
 
-  const state = randomBytes(24).toString("base64url");
-  const cookieStore = await cookies();
-  cookieStore.set("google_oauth_state", state, {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    path: "/",
-    maxAge: 10 * 60,
-  });
+  try {
+    const state = randomBytes(24).toString("base64url");
+    const cookieStore = await cookies();
+    cookieStore.set("google_oauth_state", state, {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      path: "/",
+      maxAge: 10 * 60,
+    });
 
-  return NextResponse.redirect(buildGoogleOAuthUrl(state));
+    return NextResponse.redirect(buildGoogleOAuthUrl(state));
+  } catch (caught) {
+    const message = caught instanceof Error ? caught.message : "google_oauth_not_configured";
+    const url = new URL("/admin/avaliacoes", baseUrl);
+    url.searchParams.set("google_error", message.slice(0, 120));
+    return NextResponse.redirect(url);
+  }
 }
