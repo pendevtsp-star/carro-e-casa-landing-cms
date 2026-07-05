@@ -13,6 +13,8 @@ import { requireCapability } from "@/lib/admin-auth";
 import { adminRoles } from "@/lib/admin-permissions";
 import {
   fetchBusinessProfileReviews,
+  findFirstBusinessLocation,
+  getGoogleAccessToken,
   starRatingToNumber,
 } from "@/lib/google-business";
 import { prisma } from "@/lib/prisma";
@@ -382,7 +384,21 @@ type GooglePlaceDetailsResponse = {
 export async function syncGoogleReviews() {
   await requireCapability("manageContent");
 
-  const integration = await prisma.googleIntegration.findUnique({ where: { id: "main" } });
+  let integration = await prisma.googleIntegration.findUnique({ where: { id: "main" } });
+  if (integration?.encryptedRefreshToken && (!integration.accountName || !integration.locationName)) {
+    const accessToken = await getGoogleAccessToken();
+    const { account, location } = await findFirstBusinessLocation(accessToken);
+    integration = await prisma.googleIntegration.update({
+      where: { id: "main" },
+      data: {
+        accountName: account.name,
+        accountDisplayName: account.accountName || account.name,
+        locationName: location.name,
+        locationTitle: location.title || location.name,
+      },
+    });
+  }
+
   if (integration?.encryptedRefreshToken && integration.accountName && integration.locationName) {
     const data = await fetchBusinessProfileReviews();
     const reviews = (data.reviews ?? [])

@@ -95,6 +95,7 @@ export default async function AvaliacoesPage({ searchParams }: PageProps) {
               <div className="mt-4 grid gap-1 text-sm text-brand-dark/62">
                 <p>
                   <strong className="text-brand-dark">Status:</strong> conectado
+                  {!googleIntegration.locationTitle ? " parcialmente" : ""}
                 </p>
                 <p>
                   <strong className="text-brand-dark">Conta:</strong>{" "}
@@ -102,7 +103,7 @@ export default async function AvaliacoesPage({ searchParams }: PageProps) {
                 </p>
                 <p>
                   <strong className="text-brand-dark">Local:</strong>{" "}
-                  {googleIntegration.locationTitle || "Local selecionado"}
+                  {googleIntegration.locationTitle || "aguardando liberação da API Business Profile"}
                 </p>
                 <p>
                   <strong className="text-brand-dark">Última sincronização:</strong>{" "}

@@ -11,6 +11,14 @@ type GoogleTokenResponse = {
   error_description?: string;
 };
 
+type GoogleApiErrorResponse = {
+  error?: {
+    code?: number;
+    message?: string;
+    status?: string;
+  };
+};
+
 type GoogleAccount = {
   name: string;
   accountName?: string;
@@ -146,7 +154,16 @@ async function googleGet<T>(url: string, accessToken: string) {
   });
 
   if (!response.ok) {
-    throw new Error(`Google retornou erro ${response.status}.`);
+    let message = `Google retornou erro ${response.status}.`;
+    try {
+      const data = (await response.json()) as GoogleApiErrorResponse;
+      if (data.error?.message) {
+        message = `Google retornou erro ${response.status}: ${data.error.message}`;
+      }
+    } catch {
+      message = `Google retornou erro ${response.status}.`;
+    }
+    throw new Error(message);
   }
 
   return (await response.json()) as T;
@@ -223,8 +240,24 @@ export async function saveGoogleConnection(tokens: GoogleTokenResponse) {
   }
 
   const accessToken = tokens.access_token;
-  const { account, location } = await findFirstBusinessLocation(accessToken);
+  await prisma.googleIntegration.upsert({
+    where: { id: "main" },
+    update: {
+      encryptedAccessToken: encryptSecret(accessToken),
+      encryptedRefreshToken: tokens.refresh_token
+        ? encryptSecret(tokens.refresh_token)
+        : undefined,
+      accessTokenExpiresAt: new Date(Date.now() + (tokens.expires_in || 3600) * 1000),
+    },
+    create: {
+      id: "main",
+      encryptedAccessToken: encryptSecret(accessToken),
+      encryptedRefreshToken: tokens.refresh_token ? encryptSecret(tokens.refresh_token) : null,
+      accessTokenExpiresAt: new Date(Date.now() + (tokens.expires_in || 3600) * 1000),
+    },
+  });
 
+  const { account, location } = await findFirstBusinessLocation(accessToken);
   await prisma.googleIntegration.upsert({
     where: { id: "main" },
     update: {
