@@ -47,8 +47,8 @@ export function Header({
   return (
     <header className="sticky top-0 z-50 border-b border-brand-dark/10 bg-background/88 backdrop-blur-xl">
       <Container className="flex h-20 items-center justify-between gap-4">
-        <Link href="/#inicio" className="flex items-center gap-3">
-          <span className="relative size-12 overflow-hidden rounded-full bg-brand">
+        <Link href="/#inicio" className="flex min-w-0 flex-1 items-center gap-3 lg:flex-none">
+          <span className="relative size-12 shrink-0 overflow-hidden rounded-full bg-brand">
             <Image
               src={logoUrl}
               alt={`Logo ${businessName}`}
@@ -59,7 +59,7 @@ export function Header({
             />
           </span>
           <span
-            className="flex items-baseline text-[1.95rem] font-black uppercase leading-none tracking-[-0.04em] text-brand-dark sm:text-[2.15rem]"
+            className="flex min-w-0 shrink whitespace-nowrap text-[clamp(1rem,3.8vw,1.5rem)] font-black uppercase leading-none tracking-[-0.045em] text-brand-dark"
             aria-label={businessName}
           >
             <span>Carro</span>
