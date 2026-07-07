@@ -25,7 +25,14 @@ import {
 } from "@/lib/login-rate-limit";
 import { prisma } from "@/lib/prisma";
 import { getUploadRoot } from "@/lib/uploads";
-import { emptyToNull, formBool, formString, parseOrder } from "@/lib/utils";
+import {
+  emptyToNull,
+  formBool,
+  formString,
+  parseOrder,
+  requireSafeAssetTarget,
+  requireSafeNavigationTarget,
+} from "@/lib/utils";
 import { headers } from "next/headers";
 
 type ActionState = {
@@ -185,11 +192,11 @@ export async function updateSiteSettings(formData: FormData) {
       whatsappNumber: shortText,
       whatsappMessage: shortText,
       instagramUrl: z.string().url("Informe uma URL válida."),
-      address: urlField,
+      address: z.string().trim().optional(),
       openingHours: urlField,
       email: z.string().trim().optional(),
       googleMapsUrl: urlField,
-      googleMapsEmbed: z.string().trim().optional(),
+      googleMapsEmbed: urlField,
       logoUrl: shortText,
       alternateLogoUrl: urlField,
       faviconUrl: urlField,
@@ -221,22 +228,39 @@ export async function updateSiteSettings(formData: FormData) {
       appAccessLabel: formData.get("appAccessLabel"),
     });
 
+  const normalized = {
+    ...parsed,
+    logoUrl: requireSafeAssetTarget(parsed.logoUrl, "Logo"),
+    alternateLogoUrl: parsed.alternateLogoUrl
+      ? requireSafeAssetTarget(parsed.alternateLogoUrl, "Logo alternativa")
+      : undefined,
+    faviconUrl: parsed.faviconUrl
+      ? requireSafeAssetTarget(parsed.faviconUrl, "Favicon")
+      : undefined,
+    googleMapsUrl: parsed.googleMapsUrl
+      ? requireSafeNavigationTarget(parsed.googleMapsUrl, "Link do Google Maps")
+      : undefined,
+    googleMapsEmbed: parsed.googleMapsEmbed
+      ? requireSafeNavigationTarget(parsed.googleMapsEmbed, "Google Maps embed")
+      : undefined,
+  };
+
   await prisma.siteSetting.upsert({
     where: { id: "main" },
     update: {
-      ...parsed,
-      address: parsed.address || null,
-      openingHours: parsed.openingHours || null,
-      email: parsed.email || null,
-      googleMapsUrl: parsed.googleMapsUrl || null,
-      googleMapsEmbed: parsed.googleMapsEmbed || null,
-      alternateLogoUrl: parsed.alternateLogoUrl || null,
-      faviconUrl: parsed.faviconUrl || null,
+      ...normalized,
+      address: normalized.address || null,
+      openingHours: normalized.openingHours || null,
+      email: normalized.email || null,
+      googleMapsUrl: normalized.googleMapsUrl || null,
+      googleMapsEmbed: normalized.googleMapsEmbed || null,
+      alternateLogoUrl: normalized.alternateLogoUrl || null,
+      faviconUrl: normalized.faviconUrl || null,
       appAccessEnabled: formBool(formData, "appAccessEnabled"),
     },
     create: {
       id: "main",
-      ...parsed,
+      ...normalized,
       appAccessEnabled: formBool(formData, "appAccessEnabled"),
     },
   });
@@ -274,10 +298,21 @@ export async function updateHero(formData: FormData) {
       imageAlt: formData.get("imageAlt"),
     });
 
+  const normalized = {
+    ...parsed,
+    primaryButtonUrl: parsed.primaryButtonUrl
+      ? requireSafeNavigationTarget(parsed.primaryButtonUrl, "URL do botao principal")
+      : undefined,
+    secondaryButtonUrl: parsed.secondaryButtonUrl
+      ? requireSafeNavigationTarget(parsed.secondaryButtonUrl, "URL do botao secundario")
+      : undefined,
+    imageUrl: requireSafeAssetTarget(parsed.imageUrl, "Imagem do hero"),
+  };
+
   await prisma.heroSection.upsert({
     where: { id: "main" },
-    update: parsed,
-    create: { id: "main", ...parsed },
+    update: normalized,
+    create: { id: "main", ...normalized },
   });
 
   revalidatePublic();
@@ -295,10 +330,15 @@ export async function saveCarouselSlide(formData: FormData) {
   const data = {
     title: formString(formData, "title"),
     subtitle: formString(formData, "subtitle"),
-    imageUrl: uploadedImageUrl || formString(formData, "imageUrl"),
+    imageUrl: requireSafeAssetTarget(
+      uploadedImageUrl || formString(formData, "imageUrl"),
+      "Imagem do slide",
+    ),
     imageAlt: formString(formData, "imageAlt"),
     buttonLabel: emptyToNull(formData.get("buttonLabel")),
-    buttonUrl: emptyToNull(formData.get("buttonUrl")),
+    buttonUrl: emptyToNull(formData.get("buttonUrl"))
+      ? requireSafeNavigationTarget(String(formData.get("buttonUrl")), "URL do botao do slide")
+      : null,
     isActive: formBool(formData, "isActive"),
     order: parseOrder(formData),
   };
@@ -338,9 +378,15 @@ export async function saveBrand(formData: FormData) {
 
   const data = {
     name: formString(formData, "name"),
-    logoUrl: uploadedLogoUrl || emptyToNull(formData.get("logoUrl")),
+    logoUrl: uploadedLogoUrl
+      ? requireSafeAssetTarget(uploadedLogoUrl, "Logo da marca")
+      : emptyToNull(formData.get("logoUrl"))
+        ? requireSafeAssetTarget(String(formData.get("logoUrl")), "Logo da marca")
+        : null,
     description: emptyToNull(formData.get("description")),
-    officialUrl: emptyToNull(formData.get("officialUrl")),
+    officialUrl: emptyToNull(formData.get("officialUrl"))
+      ? requireSafeNavigationTarget(String(formData.get("officialUrl")), "Site oficial da marca")
+      : null,
     isFeatured: formBool(formData, "isFeatured"),
     order: parseOrder(formData),
   };
@@ -664,7 +710,9 @@ export async function saveCategory(formData: FormData) {
     name: formString(formData, "name"),
     description: formString(formData, "description"),
     iconName: formString(formData, "iconName") || "Sparkles",
-    imageUrl: emptyToNull(formData.get("imageUrl")),
+    imageUrl: emptyToNull(formData.get("imageUrl"))
+      ? requireSafeAssetTarget(String(formData.get("imageUrl")), "Imagem da categoria")
+      : null,
     whatsappMessage: emptyToNull(formData.get("whatsappMessage")),
     isActive: formBool(formData, "isActive"),
     order: parseOrder(formData),
@@ -751,7 +799,9 @@ export async function updateSeoSetting(formData: FormData) {
     title: formString(formData, "title"),
     description: formString(formData, "description"),
     keywords: emptyToNull(formData.get("keywords")),
-    ogImageUrl: emptyToNull(formData.get("ogImageUrl")),
+    ogImageUrl: emptyToNull(formData.get("ogImageUrl"))
+      ? requireSafeAssetTarget(String(formData.get("ogImageUrl")), "Imagem Open Graph")
+      : null,
   };
 
   z.object({ title: shortText, description: longText }).parse(data);

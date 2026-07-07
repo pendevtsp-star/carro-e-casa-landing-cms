@@ -57,6 +57,60 @@ Antes de migracoes maiores, rode o backup e confira se os arquivos foram criados
 ls -lh /srv/apps/carro-e-casa/backups | tail
 ```
 
+Recomendacao operacional:
+
+- Rode backup antes de migracoes, troca de dominio, mudancas grandes no CMS ou update de dependencias.
+- Mantenha ao menos uma copia externa dos dumps e do archive de uploads.
+- Nomeie os backups com data e hora e nunca sobrescreva o ultimo backup valido.
+
+## Restore
+
+Para restaurar banco e uploads em um incidente:
+
+1. Pare apenas o container web:
+
+```bash
+cd /srv/apps/carro-e-casa/app
+docker compose -p carro-e-casa stop web
+```
+
+2. Restaure o banco a partir de um dump:
+
+```bash
+cat /srv/apps/carro-e-casa/backups/db-AAAAmmdd-HHMMSS.sql \
+  | docker compose -p carro-e-casa exec -T db psql -U carro_casa -d carro_casa
+```
+
+3. Restaure os uploads:
+
+```bash
+mkdir -p /srv/apps/carro-e-casa/data/uploads
+tar -xzf /srv/apps/carro-e-casa/backups/uploads-AAAAmmdd-HHMMSS.tar.gz \
+  -C /srv/apps/carro-e-casa/data/uploads
+```
+
+4. Suba novamente a aplicacao:
+
+```bash
+docker compose -p carro-e-casa up -d web
+docker compose -p carro-e-casa ps
+```
+
+5. Validacao minima apos restore:
+
+```bash
+curl -I https://lojacarroecasa.com.br/
+curl -I https://lojacarroecasa.com.br/admin/login
+```
+
+6. Entrar no painel e conferir:
+
+- home carregando
+- midia existente
+- marcas/carrossel
+- paginas legais
+- usuarios admin
+
 ## SSL
 
 Os hosts atuais cobertos pelo certificado:
@@ -98,3 +152,12 @@ done
 - Avaliacoes Google: sincronizacao em `Admin > Avaliacoes` usando dados reais do perfil no Google. Preferencialmente usa OAuth Business Profile com `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` e `GOOGLE_REDIRECT_URI`; `GOOGLE_PLACES_API_KEY` e `GOOGLE_PLACE_ID` ficam como fallback.
 - E-mails institucionais: cada usuario do admin pode ter um e-mail associado para abrir o Webmail da LocaWeb pelo dashboard.
 - Usuarios: mantenha `owner/admin` apenas para socios ou pessoas com responsabilidade operacional. Use `editor` ou `media` para social media.
+
+## Checklist Rapido De Operacao
+
+- Confirmar SSL valido e renovacao automatica.
+- Confirmar backup recente de banco e uploads.
+- Verificar `docker compose -p carro-e-casa ps`.
+- Verificar acesso em `/` e `/admin/login`.
+- Validar um login de admin apos cada deploy relevante.
+- Evitar usar a mesma senha entre admin do site, e-mail e outros sistemas.

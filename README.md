@@ -146,3 +146,24 @@ O seed cadastra:
 - Trocar a senha admin criada pelo seed.
 - Definir `NEXT_PUBLIC_SITE_URL` com o domínio final.
 - Definir `NEXT_PUBLIC_APP_ACCESS_URL` quando o futuro SaaS estiver pronto.
+
+## Checklist De Go-Live
+
+- Confirmar que `AUTH_SECRET`, `POSTGRES_PASSWORD` e senhas de admin são fortes e exclusivos de produção.
+- Garantir que o painel admin está acessível somente por `https://lojacarroecasa.com.br/admin`.
+- Validar login com um usuário real e confirmar que usuários inativos não acessam.
+- Conferir se os e-mails institucionais, WhatsApp, Instagram, Google Maps e links do hero estão corretos.
+- Testar upload de imagem no painel e confirmar exibição em `/media/...`.
+- Validar backup manual de banco e uploads com o procedimento em [docs/OPERACAO-VPS.md](docs/OPERACAO-VPS.md).
+- Conferir renovação do SSL com `certbot renew --dry-run`.
+- Revisar os perfis de acesso: `owner/admin` apenas para sócios ou operação, `editor/media` para apoio.
+- Confirmar que o botão de acesso ao futuro sistema continua desativado, se o SaaS ainda não estiver pronto.
+
+## Postura De Segurança Atual
+
+- Login do admin com limite de tentativas para reduzir força bruta.
+- Uploads validados e reprocessados como imagem real antes de salvar.
+- Headers de proteção ativos contra clickjacking e content sniffing.
+- Admin marcado como `noindex`.
+
+O projeto não processa pagamentos nem dados bancários. Para o escopo atual de landing + CMS institucional, a postura é adequada para uso da cliente, mantendo as rotinas operacionais e de backup em dia.

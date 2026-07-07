@@ -37,3 +37,49 @@ export function parseOrder(formData: FormData, fallback = 0) {
   const value = Number(formData.get("order"));
   return Number.isFinite(value) ? value : fallback;
 }
+
+const allowedNavigationProtocols = new Set(["http:", "https:", "mailto:", "tel:"]);
+const allowedAssetProtocols = new Set(["http:", "https:"]);
+
+function parseAbsoluteUrl(value: string) {
+  try {
+    return new URL(value);
+  } catch {
+    return null;
+  }
+}
+
+export function isSafeNavigationTarget(value: string) {
+  if (!value) return false;
+  if (value.startsWith("/")) return true;
+  if (value.startsWith("#")) return true;
+
+  const url = parseAbsoluteUrl(value);
+  return Boolean(url && allowedNavigationProtocols.has(url.protocol));
+}
+
+export function isSafeAssetTarget(value: string) {
+  if (!value) return false;
+  if (value.startsWith("/")) return true;
+
+  const url = parseAbsoluteUrl(value);
+  return Boolean(url && allowedAssetProtocols.has(url.protocol));
+}
+
+export function requireSafeNavigationTarget(value: string, fieldLabel: string) {
+  const normalized = value.trim();
+  if (!normalized) return normalized;
+  if (!isSafeNavigationTarget(normalized)) {
+    throw new Error(`${fieldLabel} deve usar URL http(s), mailto:, tel:, /caminho ou #ancora.`);
+  }
+  return normalized;
+}
+
+export function requireSafeAssetTarget(value: string, fieldLabel: string) {
+  const normalized = value.trim();
+  if (!normalized) return normalized;
+  if (!isSafeAssetTarget(normalized)) {
+    throw new Error(`${fieldLabel} deve usar URL http(s) ou /caminho-interno.`);
+  }
+  return normalized;
+}
