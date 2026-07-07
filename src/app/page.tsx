@@ -56,9 +56,9 @@ const differentiators: Array<[string, string, LucideIcon]> = [
 ];
 
 const institutionalContacts = [
-  ["Comercial", "Renato", "comercial@lojacarroecasa.com.br"],
-  ["Financeiro", "Catarina", "financeiro@lojacarroecasa.com.br"],
-  ["Administrativo", "Fabiana", "adm@lojacarroecasa.com.br"],
+  ["Comercial", "comercial@lojacarroecasa.com.br"],
+  ["Financeiro", "financeiro@lojacarroecasa.com.br"],
+  ["Administrativo", "adm@lojacarroecasa.com.br"],
 ];
 
 const businessServices: Array<[string, string, LucideIcon]> = [
@@ -299,7 +299,7 @@ export default async function HomePage() {
                 </p>
               </div>
               <div className="mt-5 grid gap-3">
-                {institutionalContacts.map(([area, name, email]) => (
+                {institutionalContacts.map(([area, email]) => (
                   <a
                     key={email}
                     href={`mailto:${email}`}
@@ -309,9 +309,7 @@ export default async function HomePage() {
                       <Mail className="size-4" aria-hidden />
                     </span>
                     <span className="min-w-0">
-                      <span className="block text-sm font-semibold text-brand-dark">
-                        {area} <span className="font-medium text-brand-dark/52">- {name}</span>
-                      </span>
+                      <span className="block text-sm font-semibold text-brand-dark">{area}</span>
                       <span className="mt-0.5 block break-words text-xs text-brand-dark/62 group-hover:text-brand-dark sm:text-sm">
                         {email}
                       </span>
