@@ -3,6 +3,13 @@ import Credentials from "next-auth/providers/credentials";
 import { compare } from "bcryptjs";
 import { z } from "zod";
 
+import {
+  buildLoginRateLimitKey,
+  clearLoginFailures,
+  getClientIp,
+  isLoginBlocked,
+  recordLoginFailure,
+} from "@/lib/login-rate-limit";
 import { prisma } from "@/lib/prisma";
 
 const credentialsSchema = z.object({
@@ -24,17 +31,24 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         email: { label: "E-mail", type: "email" },
         password: { label: "Senha", type: "password" },
       },
-      async authorize(credentials) {
+      async authorize(credentials, request) {
         const parsed = credentialsSchema.safeParse(credentials);
         if (!parsed.success) {
           return null;
         }
 
+        const email = parsed.data.email.toLowerCase();
+        const rateLimitKey = buildLoginRateLimitKey(getClientIp(request.headers), email);
+        if (isLoginBlocked(rateLimitKey)) {
+          return null;
+        }
+
         const user = await prisma.adminUser.findUnique({
-          where: { email: parsed.data.email.toLowerCase() },
+          where: { email },
         });
 
         if (!user?.isActive) {
+          recordLoginFailure(rateLimitKey);
           return null;
         }
 
@@ -44,8 +58,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         );
 
         if (!passwordMatches) {
+          recordLoginFailure(rateLimitKey);
           return null;
         }
+
+        clearLoginFailures(rateLimitKey);
 
         return {
           id: user.id,

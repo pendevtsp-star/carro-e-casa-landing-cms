@@ -17,9 +17,16 @@ import {
   getGoogleAccessToken,
   starRatingToNumber,
 } from "@/lib/google-business";
+import {
+  buildLoginRateLimitKey,
+  clearLoginFailures,
+  getClientIp,
+  isLoginBlocked,
+} from "@/lib/login-rate-limit";
 import { prisma } from "@/lib/prisma";
 import { getUploadRoot } from "@/lib/uploads";
 import { emptyToNull, formBool, formString, parseOrder } from "@/lib/utils";
+import { headers } from "next/headers";
 
 type ActionState = {
   ok: boolean;
@@ -74,16 +81,30 @@ async function saveImageFromForm(file: FormDataEntryValue | null, altText?: stri
           : "jpg";
   const fileName = `${Date.now()}-${nanoid(10)}.${extension}`;
   const absolutePath = `${uploadRoot}/${fileName}`;
-  const buffer = Buffer.from(await file.arrayBuffer());
-  let metadata: { width?: number; height?: number } = {};
-  try {
-    const sharp = (await import("sharp")).default;
-    metadata = await sharp(buffer).metadata();
-  } catch {
-    metadata = {};
+  const inputBuffer = Buffer.from(await file.arrayBuffer());
+  const sharp = (await import("sharp")).default;
+  const maxDimension = 6000;
+  const image = sharp(inputBuffer, { limitInputPixels: maxDimension * maxDimension });
+  const metadata = await image.metadata();
+
+  if (!metadata.width || !metadata.height) {
+    throw new Error("A imagem enviada é inválida.");
   }
 
-  await writeFile(absolutePath, buffer);
+  if (metadata.width > maxDimension || metadata.height > maxDimension) {
+    throw new Error(`A imagem deve ter no máximo ${maxDimension}px em largura e altura.`);
+  }
+
+  const sanitizedBuffer =
+    extension === "png"
+      ? await image.rotate().png().toBuffer()
+      : extension === "webp"
+        ? await image.rotate().webp({ quality: 92 }).toBuffer()
+        : extension === "avif"
+          ? await image.rotate().avif({ quality: 65 }).toBuffer()
+          : await image.rotate().jpeg({ quality: 92 }).toBuffer();
+
+  await writeFile(absolutePath, sanitizedBuffer);
 
   const asset = await prisma.mediaAsset.create({
     data: {
@@ -91,7 +112,7 @@ async function saveImageFromForm(file: FormDataEntryValue | null, altText?: stri
       fileName,
       url: `/media/${fileName}`,
       mimeType: file.type,
-      size: file.size,
+      size: sanitizedBuffer.byteLength,
       width: metadata.width,
       height: metadata.height,
       altText: emptyToNull(altText ?? null),
@@ -105,6 +126,7 @@ export async function loginAction(
   _: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
+  const requestHeaders = await headers();
   const parsed = z
     .object({
       email: z.string().email("Informe um e-mail válido.").trim(),
@@ -119,6 +141,18 @@ export async function loginAction(
     return { ok: false, message: "Revise e-mail e senha." };
   }
 
+  const rateLimitKey = buildLoginRateLimitKey(
+    getClientIp(requestHeaders),
+    parsed.data.email.toLowerCase(),
+  );
+
+  if (isLoginBlocked(rateLimitKey)) {
+    return {
+      ok: false,
+      message: "Muitas tentativas de acesso. Aguarde alguns minutos e tente novamente.",
+    };
+  }
+
   try {
     await signIn("credentials", {
       email: parsed.data.email.toLowerCase(),
@@ -127,6 +161,7 @@ export async function loginAction(
     });
   } catch (error) {
     if (error instanceof Error && error.message === "NEXT_REDIRECT") {
+      clearLoginFailures(rateLimitKey);
       throw error;
     }
     return { ok: false, message: "E-mail ou senha inválidos." };

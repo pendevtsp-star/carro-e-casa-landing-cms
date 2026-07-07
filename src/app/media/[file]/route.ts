@@ -41,6 +41,8 @@ export async function GET(
         "Content-Type": contentType,
         "Content-Length": String(info.size),
         "Cache-Control": "public, max-age=31536000, immutable",
+        "X-Content-Type-Options": "nosniff",
+        "Content-Disposition": `inline; filename="${file}"`,
       },
     });
   } catch {
