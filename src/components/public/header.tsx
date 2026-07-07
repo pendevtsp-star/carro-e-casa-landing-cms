@@ -58,8 +58,13 @@ export function Header({
               priority
             />
           </span>
-          <span className="text-lg font-semibold text-brand-dark">
-            {businessName}
+          <span
+            className="flex items-baseline text-[1.95rem] font-black uppercase leading-none tracking-[-0.04em] text-brand-dark sm:text-[2.15rem]"
+            aria-label={businessName}
+          >
+            <span>Carro</span>
+            <span className="text-brand">&amp;</span>
+            <span>Casa</span>
           </span>
         </Link>
 
