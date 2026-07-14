@@ -167,3 +167,13 @@ O seed cadastra:
 - Admin marcado como `noindex`.
 
 O projeto não processa pagamentos nem dados bancários. Para o escopo atual de landing + CMS institucional, a postura é adequada para uso da cliente, mantendo as rotinas operacionais e de backup em dia.
+
+## Google Ads
+
+A landing possui a tag global do Google Ads para a conta `AW-16842267245`.
+
+Conversão principal configurada:
+
+- Clique em WhatsApp: `AW-16842267245/5rJlCI7itdAcEO20gt8-`
+
+O evento de conversão é disparado somente em cliques de links do WhatsApp (`wa.me`, `api.whatsapp.com` ou `web.whatsapp.com`). Não há disparo por carregamento de página, para evitar conversões falsas.
