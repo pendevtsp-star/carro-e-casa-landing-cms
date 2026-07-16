@@ -3,6 +3,7 @@ import {
   FileQuestion,
   FileText,
   GalleryHorizontal,
+  BarChart3,
   Home,
   Image,
   LayoutDashboard,
@@ -22,6 +23,7 @@ import { canAccessAdminPath } from "@/lib/admin-permissions";
 
 const links: Array<[string, string, LucideIcon]> = [
   ["Dashboard", "/admin", LayoutDashboard],
+  ["Métricas", "/admin/metricas", BarChart3],
   ["Configurações", "/admin/configuracoes", Settings],
   ["Home", "/admin/home", Home],
   ["Carrossel", "/admin/carrossel", GalleryHorizontal],

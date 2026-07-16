@@ -175,6 +175,34 @@ model GoogleIntegration {
   updatedAt             DateTime  @updatedAt
 }
 
+model AnalyticsEvent {
+  id            String   @id @default(cuid())
+  eventName     String
+  eventCategory String
+  eventLabel    String?
+  pagePath      String
+  pageTitle     String?
+  targetUrl     String?
+  referrer      String?
+  utmSource     String?
+  utmMedium     String?
+  utmCampaign   String?
+  utmContent    String?
+  utmTerm       String?
+  deviceType    String
+  browser       String?
+  os            String?
+  visitorId     String?
+  sessionId     String?
+  createdAt     DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([eventName, createdAt])
+  @@index([eventCategory, createdAt])
+  @@index([pagePath, createdAt])
+  @@index([utmSource, createdAt])
+}
+
 model SeoSetting {
   id          String   @id @default(cuid())
   page        String   @unique

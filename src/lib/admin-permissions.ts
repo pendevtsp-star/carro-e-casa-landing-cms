@@ -6,7 +6,8 @@ export type AdminCapability =
   | "manageSite"
   | "manageContent"
   | "manageMedia"
-  | "manageUsers";
+  | "manageUsers"
+  | "viewMetrics";
 
 export const roleLabels: Record<AdminRole, string> = {
   owner: "Sócio / proprietário",
@@ -23,9 +24,9 @@ export const roleDescriptions: Record<AdminRole, string> = {
 };
 
 const permissions: Record<AdminRole, AdminCapability[]> = {
-  owner: ["manageSite", "manageContent", "manageMedia", "manageUsers"],
-  admin: ["manageSite", "manageContent", "manageMedia", "manageUsers"],
-  editor: ["manageContent", "manageMedia"],
+  owner: ["manageSite", "manageContent", "manageMedia", "manageUsers", "viewMetrics"],
+  admin: ["manageSite", "manageContent", "manageMedia", "manageUsers", "viewMetrics"],
+  editor: ["manageContent", "manageMedia", "viewMetrics"],
   media: ["manageMedia"],
 };
 
@@ -40,6 +41,7 @@ export function can(role: string | null | undefined, capability: AdminCapability
 export function canAccessAdminPath(role: string | null | undefined, href: string) {
   if (href === "/admin") return true;
   if (href === "/admin/usuarios") return can(role, "manageUsers");
+  if (href === "/admin/metricas") return can(role, "viewMetrics");
   if (["/admin/configuracoes", "/admin/seo"].includes(href)) return can(role, "manageSite");
   if (["/admin/midia", "/admin/carrossel"].includes(href)) return can(role, "manageMedia");
   return can(role, "manageContent");

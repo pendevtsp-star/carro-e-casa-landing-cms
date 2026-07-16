@@ -2,6 +2,7 @@ import Link from "next/link";
 import {
   FileQuestion,
   GalleryHorizontal,
+  BarChart3,
   Image,
   MessageCircle,
   Search,
@@ -26,6 +27,7 @@ import {
 } from "@/lib/content";
 
 const cards: Array<[string, string, LucideIcon, string]> = [
+  ["Métricas", "/admin/metricas", BarChart3, "Acessos, cliques, origens e desempenho dos botões da landing."],
   ["Configurações", "/admin/configuracoes", Settings, "WhatsApp, Instagram, endereço e acesso futuro ao sistema."],
   ["Home", "/admin/home", MessageCircle, "Hero, chamadas principais e imagem de destaque."],
   ["Carrossel", "/admin/carrossel", GalleryHorizontal, "Banners e campanhas institucionais."],

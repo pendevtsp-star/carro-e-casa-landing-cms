@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { GoogleAdsTracking } from "@/components/analytics/google-ads";
+import { SiteMetrics } from "@/components/analytics/site-metrics";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -34,6 +35,7 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col">
         <GoogleAdsTracking />
+        <SiteMetrics />
         {children}
       </body>
     </html>
