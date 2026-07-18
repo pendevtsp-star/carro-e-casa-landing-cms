@@ -1,0 +1,74 @@
+name: Security - CodeQL
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  schedule:
+    - cron: "0 4 * * 0"
+
+permissions:
+  contents: read
+  security-events: write
+
+concurrency:
+  group: security-codeql-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  codeql:
+    name: CodeQL Analysis
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: carro_casa
+          POSTGRES_USER: carro_casa
+          POSTGRES_PASSWORD: carro_casa_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U carro_casa -d carro_casa"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      NODE_ENV: test
+      POSTGRES_DB: carro_casa
+      POSTGRES_USER: carro_casa
+      POSTGRES_PASSWORD: carro_casa_password
+      DATABASE_URL: postgresql://carro_casa:carro_casa_password@localhost:5432/carro_casa?schema=public
+      AUTH_SECRET: ci-auth-secret-at-least-thirty-two-chars
+      AUTH_URL: http://localhost:3000
+      NEXT_PUBLIC_SITE_URL: https://lojacarroecasa.com.br
+      NEXT_PUBLIC_APP_ACCESS_URL: https://app.lojacarroecasa.com.br
+      NEXT_PUBLIC_WHATSAPP_NUMBER: "558230287161"
+      UPLOAD_DIR: /tmp/carro-e-casa-uploads
+      MAX_UPLOAD_MB: "5"
+      NEXT_SERVER_ACTIONS_ENCRYPTION_KEY: ci-server-actions-key-at-least-thirty-two
+      GOOGLE_TOKEN_ENCRYPTION_KEY: ci-google-token-key-at-least-thirty-two
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v4
+        with:
+          languages: javascript-typescript
+          queries: security-and-quality
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+      - run: npm run db:generate
+      - run: npm run build
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v4
+

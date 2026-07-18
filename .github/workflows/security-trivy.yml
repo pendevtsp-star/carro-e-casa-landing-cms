@@ -1,0 +1,101 @@
+name: Security - Trivy
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  schedule:
+    - cron: "0 3 * * 0"
+
+permissions:
+  contents: read
+  security-events: write
+
+concurrency:
+  group: security-trivy-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  trivy:
+    name: Trivy Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Run Trivy filesystem scan
+        id: trivy-fs
+        uses: aquasecurity/trivy-action@0.35.0
+        continue-on-error: true
+        with:
+          scan-type: fs
+          scan-ref: .
+          format: sarif
+          output: trivy-fs-results.sarif
+          severity: CRITICAL,HIGH
+          exit-code: "1"
+          ignore-unfixed: true
+
+      - name: Run Trivy config scan
+        id: trivy-config
+        uses: aquasecurity/trivy-action@0.35.0
+        continue-on-error: true
+        with:
+          scan-type: config
+          scan-ref: .
+          format: sarif
+          output: trivy-config-results.sarif
+          severity: CRITICAL,HIGH
+          exit-code: "1"
+
+      - name: Build local image for scan
+        run: >-
+          docker build
+          --build-arg NEXT_PUBLIC_SITE_URL=https://lojacarroecasa.com.br
+          --build-arg NEXT_PUBLIC_APP_ACCESS_URL=https://app.lojacarroecasa.com.br
+          --build-arg NEXT_PUBLIC_WHATSAPP_NUMBER=558230287161
+          -t carro-e-casa-web:security-scan
+          .
+
+      - name: Run Trivy image scan
+        id: trivy-image
+        uses: aquasecurity/trivy-action@0.35.0
+        continue-on-error: true
+        with:
+          image-ref: carro-e-casa-web:security-scan
+          format: sarif
+          output: trivy-image-results.sarif
+          severity: CRITICAL,HIGH
+          exit-code: "1"
+          ignore-unfixed: true
+
+      - name: Upload filesystem SARIF
+        uses: github/codeql-action/upload-sarif@v4
+        if: always() && hashFiles('trivy-fs-results.sarif') != ''
+        with:
+          sarif_file: trivy-fs-results.sarif
+          category: trivy-fs
+
+      - name: Upload config SARIF
+        uses: github/codeql-action/upload-sarif@v4
+        if: always() && hashFiles('trivy-config-results.sarif') != ''
+        with:
+          sarif_file: trivy-config-results.sarif
+          category: trivy-config
+
+      - name: Upload image SARIF
+        uses: github/codeql-action/upload-sarif@v4
+        if: always() && hashFiles('trivy-image-results.sarif') != ''
+        with:
+          sarif_file: trivy-image-results.sarif
+          category: trivy-image
+
+      - name: Fail on critical or high findings
+        if: >-
+          steps.trivy-fs.outcome == 'failure' ||
+          steps.trivy-config.outcome == 'failure' ||
+          steps.trivy-image.outcome == 'failure'
+        run: exit 1
+
