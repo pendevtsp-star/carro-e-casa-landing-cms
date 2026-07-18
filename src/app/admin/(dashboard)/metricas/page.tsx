@@ -1,10 +1,23 @@
-import { ArrowDownRight, ArrowUpRight, BarChart3, MousePointerClick, Users, View } from "lucide-react";
+import {
+  ArrowDownRight,
+  ArrowUpRight,
+  BarChart3,
+  CalendarDays,
+  Download,
+  MousePointerClick,
+  Target,
+  TrendingUp,
+  Users,
+  View,
+} from "lucide-react";
 
 import { AdminPage } from "@/components/admin/admin-page";
+import { CampaignLinkBuilder } from "@/components/admin/campaign-link-builder";
 import { Card } from "@/components/ui/card";
 import { requireCapability } from "@/lib/admin-auth";
+import { getSiteSetting } from "@/lib/content";
 import { prisma } from "@/lib/prisma";
-import { cn } from "@/lib/utils";
+import { buildWhatsappUrl, cn } from "@/lib/utils";
 import type { LucideIcon } from "lucide-react";
 
 type MetricsPageProps = {
@@ -107,10 +120,48 @@ function getDateRange(params: Awaited<MetricsPageProps["searchParams"]>) {
     return { start: startOfDay(explicitStart), end: endOfDay(explicitEnd), period: "custom" };
   }
 
+  if (params.period === "today") {
+    return { start: startOfDay(now), end: endOfDay(now), period: "today" };
+  }
+
+  if (params.period === "month") {
+    return {
+      start: startOfDay(new Date(now.getFullYear(), now.getMonth(), 1)),
+      end: endOfDay(now),
+      period: "month",
+    };
+  }
+
   const days = params.period === "90" ? 90 : params.period === "7" ? 7 : 30;
   const start = startOfDay(new Date(now));
   start.setDate(start.getDate() - (days - 1));
   return { start, end: endOfDay(now), period: String(days) };
+}
+
+function buildQuery(
+  params: Awaited<MetricsPageProps["searchParams"]>,
+  overrides: Record<string, string | null>,
+) {
+  const query = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value) query.set(key, value);
+  });
+  Object.entries(overrides).forEach(([key, value]) => {
+    if (value) {
+      query.set(key, value);
+    } else {
+      query.delete(key);
+    }
+  });
+  return query.toString();
+}
+
+function hrefWithQuery(
+  params: Awaited<MetricsPageProps["searchParams"]>,
+  overrides: Record<string, string | null>,
+) {
+  const query = buildQuery(params, overrides);
+  return query ? `/admin/metricas?${query}` : "/admin/metricas";
 }
 
 function percent(value: number, total: number) {
@@ -154,7 +205,8 @@ export default async function MetricsPage({ searchParams }: MetricsPageProps) {
     ...(params.source ? { utmSource: params.source === "__direct" ? null : params.source } : {}),
   };
 
-  const [events, allEventNames, allCategories, allDevices, allSources] = await Promise.all([
+  const [settings, events, allEventNames, allCategories, allDevices, allSources] = await Promise.all([
+    getSiteSetting(),
     prisma.analyticsEvent.findMany({
       where,
       orderBy: { createdAt: "desc" },
@@ -224,6 +276,14 @@ export default async function MetricsPage({ searchParams }: MetricsPageProps) {
   const pages = groupCount(events.filter((event) => event.eventName === "page_view"), (event) => event.pagePath).slice(0, 8);
   const ctas = groupCount(events.filter((event) => event.eventName.startsWith("click_")), (event) => event.eventLabel || eventNameLabel(event.eventName)).slice(0, 8);
   const recentEvents = events.slice(0, 30);
+  const interactions = events.filter((event) => event.eventName !== "page_view").length;
+  const topSource = sources[0]?.label || "Sem dados";
+  const topPage = pages[0]?.label || "Sem dados";
+  const topCta = ctas[0]?.label || "Sem dados";
+  const engagementRate = pageViews ? (interactions / pageViews) * 100 : 0;
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://lojacarroecasa.com.br";
+  const whatsappUrl = buildWhatsappUrl(settings.whatsappNumber, settings.whatsappMessage);
+  const exportQuery = buildQuery(params, {});
   const summaryCards: SummaryCard[] = [
     ["Acessos", pageViews, "Visualizações de página", View],
     ["Visitantes", visitors, "Navegadores únicos estimados", Users],
@@ -231,20 +291,59 @@ export default async function MetricsPage({ searchParams }: MetricsPageProps) {
     ["WhatsApp", whatsappClicks, `${conversionRate.toFixed(1).replace(".", ",")}% por acesso`, MousePointerClick],
     ["Contatos", contactClicks, "WhatsApp, e-mail e localização", MousePointerClick],
   ];
+  const executiveCards: Array<[string, string, string, LucideIcon]> = [
+    ["Taxa WhatsApp", `${conversionRate.toFixed(1).replace(".", ",")}%`, "Cliques no WhatsApp por acesso", Target],
+    ["Melhor origem", topSource, `${compactNumber(sources[0]?.count || 0)} acessos`, TrendingUp],
+    ["Página principal", topPage, `${compactNumber(pages[0]?.count || 0)} visualizações`, View],
+  ];
 
   return (
     <AdminPage
       title="Métricas"
       description="Acompanhe acessos, origem do tráfego, dispositivos e cliques importantes da landing."
     >
+      <div className="grid gap-4 lg:grid-cols-[1fr_auto] lg:items-center">
+        <div className="flex flex-wrap gap-2">
+          {[
+            ["Hoje", "today"],
+            ["7 dias", "7"],
+            ["30 dias", "30"],
+            ["Este mês", "month"],
+          ].map(([label, value]) => (
+            <a
+              key={value}
+              href={hrefWithQuery(params, { period: value, start: null, end: null })}
+              className={cn(
+                "inline-flex h-10 items-center rounded-md border px-4 text-sm font-semibold transition",
+                period === value
+                  ? "border-brand bg-brand text-brand-dark"
+                  : "border-brand-dark/15 bg-white text-brand-dark hover:bg-brand/10",
+              )}
+            >
+              <CalendarDays className="mr-2 size-4" aria-hidden />
+              {label}
+            </a>
+          ))}
+        </div>
+        <a
+          href={`/admin/metricas/export${exportQuery ? `?${exportQuery}` : ""}`}
+          className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-brand-dark px-4 text-sm font-semibold text-white transition hover:bg-black"
+        >
+          <Download className="size-4" aria-hidden />
+          Exportar CSV
+        </a>
+      </div>
+
       <Card className="p-4">
         <form className="grid gap-3 md:grid-cols-6">
           <label className="grid gap-1 text-sm font-medium text-brand-dark">
             Período
             <select name="period" defaultValue={period} className="rounded-md border border-brand-dark/15 bg-white px-3 py-2 text-sm">
+              <option value="today">Hoje</option>
               <option value="7">Últimos 7 dias</option>
               <option value="30">Últimos 30 dias</option>
               <option value="90">Últimos 90 dias</option>
+              <option value="month">Este mês</option>
               <option value="custom">Personalizado</option>
             </select>
           </label>
@@ -306,6 +405,91 @@ export default async function MetricsPage({ searchParams }: MetricsPageProps) {
         </form>
       </Card>
 
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Card className="p-5">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-dark/45">
+                Acessos
+              </p>
+              <h2 className="mt-2 text-xl font-semibold text-brand-dark">Chegada e alcance</h2>
+            </div>
+            <View className="size-6 text-brand-dark/40" aria-hidden />
+          </div>
+          <div className="mt-5 grid grid-cols-3 gap-3">
+            <MiniStat label="Acessos" value={compactNumber(pageViews)} />
+            <MiniStat label="Visitantes" value={compactNumber(visitors)} />
+            <MiniStat label="Sessões" value={compactNumber(sessions)} />
+          </div>
+        </Card>
+
+        <Card className="p-5">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-dark/45">
+                Interações
+              </p>
+              <h2 className="mt-2 text-xl font-semibold text-brand-dark">Intenção e contato</h2>
+            </div>
+            <MousePointerClick className="size-6 text-brand-dark/40" aria-hidden />
+          </div>
+          <div className="mt-5 grid grid-cols-3 gap-3">
+            <MiniStat label="Cliques" value={compactNumber(interactions)} />
+            <MiniStat label="WhatsApp" value={compactNumber(whatsappClicks)} />
+            <MiniStat label="Taxa" value={`${engagementRate.toFixed(1).replace(".", ",")}%`} />
+          </div>
+        </Card>
+      </div>
+
+      <Card className="bg-brand-dark p-5 text-white">
+        <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.22em] text-brand/80">
+              Relatório para cliente
+            </p>
+            <h2 className="mt-2 text-2xl font-semibold">Resumo executivo do período</h2>
+          </div>
+          <p className="text-sm text-white/58">
+            {formatInputDate(start)} até {formatInputDate(end)}
+          </p>
+        </div>
+        <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <ClientInsight
+            title="Quantas pessoas chegaram"
+            value={compactNumber(visitors || pageViews)}
+            text={visitors ? "visitantes únicos estimados" : "acessos registrados"}
+          />
+          <ClientInsight
+            title="Quem demonstrou interesse"
+            value={compactNumber(contactClicks || interactions)}
+            text={contactClicks ? "ações de contato" : "interações registradas"}
+          />
+          <ClientInsight
+            title="Canal que mais trouxe visitas"
+            value={topSource}
+            text={`${compactNumber(sources[0]?.count || 0)} acessos`}
+          />
+          <ClientInsight
+            title="Botão com mais ação"
+            value={topCta}
+            text={`${compactNumber(ctas[0]?.count || 0)} cliques`}
+          />
+        </div>
+      </Card>
+
+      <div className="grid gap-4 md:grid-cols-3">
+        {executiveCards.map(([label, value, detail, Icon]) => (
+          <Card key={label} className="p-5">
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-sm text-brand-dark/55">{label}</p>
+              <Icon className="size-5 text-brand-dark/45" aria-hidden />
+            </div>
+            <p className="mt-3 truncate text-2xl font-semibold text-brand-dark">{value}</p>
+            <p className="mt-1 text-xs leading-5 text-brand-dark/55">{detail}</p>
+          </Card>
+        ))}
+      </div>
+
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
         {summaryCards.map(([label, value, detail, Icon]) => (
           <Card key={String(label)} className="p-5">
@@ -361,6 +545,12 @@ export default async function MetricsPage({ searchParams }: MetricsPageProps) {
         <MetricList title="Páginas mais acessadas" items={pages} total={Math.max(1, pageViews)} />
       </div>
 
+      <CampaignLinkBuilder
+        siteUrl={siteUrl}
+        whatsappUrl={whatsappUrl}
+        instagramUrl={settings.instagramUrl}
+      />
+
       <Card className="overflow-hidden">
         <div className="border-b border-brand-dark/10 p-5">
           <h2 className="text-lg font-semibold text-brand-dark">Eventos recentes</h2>
@@ -404,6 +594,33 @@ export default async function MetricsPage({ searchParams }: MetricsPageProps) {
         </div>
       </Card>
     </AdminPage>
+  );
+}
+
+function MiniStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-lg border border-brand-dark/8 bg-background p-3">
+      <p className="text-xs font-medium text-brand-dark/48">{label}</p>
+      <p className="mt-1 truncate text-xl font-semibold text-brand-dark">{value}</p>
+    </div>
+  );
+}
+
+function ClientInsight({
+  title,
+  value,
+  text,
+}: {
+  title: string;
+  value: string;
+  text: string;
+}) {
+  return (
+    <div className="rounded-lg border border-white/12 bg-white/[0.07] p-4">
+      <p className="text-xs font-medium text-white/52">{title}</p>
+      <p className="mt-2 truncate text-2xl font-semibold text-white">{value}</p>
+      <p className="mt-1 text-xs leading-5 text-white/58">{text}</p>
+    </div>
   );
 }
 
