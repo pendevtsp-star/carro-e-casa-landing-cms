@@ -23,6 +23,7 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN apt-get update -y && apt-get install -y --no-install-recommends openssl && rm -rf /var/lib/apt/lists/*
+RUN groupadd --system --gid 1001 nodejs && useradd --system --uid 1001 --gid nodejs nextjs
 
 COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
@@ -34,7 +35,8 @@ COPY --from=builder /app/prisma.config.ts ./prisma.config.ts
 COPY --from=builder /app/src ./src
 COPY --from=builder /app/tsconfig.json ./tsconfig.json
 
-RUN mkdir -p /app/uploads
+RUN mkdir -p /app/uploads && chown -R nextjs:nodejs /app/uploads
+USER nextjs
 
 EXPOSE 3000
 CMD ["npm", "run", "start"]
