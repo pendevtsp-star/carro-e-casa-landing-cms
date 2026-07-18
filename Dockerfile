@@ -6,6 +6,12 @@ RUN npm ci
 FROM node:24-bookworm-slim AS builder
 WORKDIR /app
 ENV NEXT_TELEMETRY_DISABLED=1
+ARG NEXT_PUBLIC_SITE_URL=https://lojacarroecasa.com.br
+ARG NEXT_PUBLIC_APP_ACCESS_URL=https://app.lojacarroecasa.com.br
+ARG NEXT_PUBLIC_WHATSAPP_NUMBER=558230287161
+ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL
+ENV NEXT_PUBLIC_APP_ACCESS_URL=$NEXT_PUBLIC_APP_ACCESS_URL
+ENV NEXT_PUBLIC_WHATSAPP_NUMBER=$NEXT_PUBLIC_WHATSAPP_NUMBER
 RUN apt-get update -y && apt-get install -y --no-install-recommends openssl && rm -rf /var/lib/apt/lists/*
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .

@@ -1,0 +1,230 @@
+name: Deploy de producao
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      confirmar_producao:
+        description: Digite PUBLICAR para confirmar a release
+        required: true
+        type: string
+
+concurrency:
+  group: carro-e-casa-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/carro-e-casa-web
+
+jobs:
+  validate:
+    name: Validar release
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event.inputs.confirmar_producao == 'PUBLICAR'
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: carro_casa
+          POSTGRES_USER: carro_casa
+          POSTGRES_PASSWORD: carro_casa_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U carro_casa -d carro_casa"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      NODE_ENV: test
+      POSTGRES_DB: carro_casa
+      POSTGRES_USER: carro_casa
+      POSTGRES_PASSWORD: carro_casa_password
+      DATABASE_URL: postgresql://carro_casa:carro_casa_password@localhost:5432/carro_casa?schema=public
+      AUTH_SECRET: ci-auth-secret-at-least-thirty-two-chars
+      AUTH_URL: http://localhost:3000
+      NEXT_PUBLIC_SITE_URL: https://lojacarroecasa.com.br
+      NEXT_PUBLIC_APP_ACCESS_URL: https://app.lojacarroecasa.com.br
+      NEXT_PUBLIC_WHATSAPP_NUMBER: "558230287161"
+      UPLOAD_DIR: /tmp/carro-e-casa-uploads
+      MAX_UPLOAD_MB: "5"
+      NEXT_SERVER_ACTIONS_ENCRYPTION_KEY: ci-server-actions-key-at-least-thirty-two
+      GOOGLE_TOKEN_ENCRYPTION_KEY: ci-google-token-key-at-least-thirty-two
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+      - run: npm run db:generate
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run db:deploy
+      - run: npm run build
+
+  publish-images:
+    name: Publicar imagem imutavel
+    needs: validate
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.value }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+
+      - id: version
+        run: echo "value=${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile
+          push: true
+          build-args: |
+            NEXT_PUBLIC_SITE_URL=https://lojacarroecasa.com.br
+            NEXT_PUBLIC_APP_ACCESS_URL=https://app.lojacarroecasa.com.br
+            NEXT_PUBLIC_WHATSAPP_NUMBER=558230287161
+          tags: |
+            ${{ env.IMAGE_NAME }}:${{ github.sha }}
+            ${{ env.IMAGE_NAME }}:production
+
+  deploy:
+    name: Publicar na VPS
+    needs: publish-images
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: appleboy/ssh-action@v1.2.1
+        env:
+          VERSION: ${{ needs.publish-images.outputs.version }}
+          GHCR_USERNAME: ${{ secrets.GHCR_USERNAME }}
+          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          port: ${{ secrets.VPS_PORT }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.DEPLOY_KEY }}
+          envs: VERSION,GHCR_USERNAME,GHCR_TOKEN
+          timeout: 60s
+          command_timeout: 15m
+          script: |
+            set -euo pipefail
+
+            ROOT=/srv/apps/carro-e-casa
+            APP="$ROOT/app"
+            COMPOSE_PROJECT=carro-e-casa
+            IMAGE="ghcr.io/pendevtsp-star/carro-e-casa-web:${VERSION}"
+
+            [ -d "$APP" ] || { echo "[deploy] Diretorio nao encontrado: $APP"; exit 10; }
+            cd "$APP"
+            [ -f .env ] || { echo "[deploy] Arquivo .env nao encontrado em $APP"; exit 11; }
+            [ -f docker-compose.yml ] || { echo "[deploy] docker-compose.yml nao encontrado em $APP"; exit 12; }
+
+            cat > docker-compose.ghcr.yml <<'EOF'
+            services:
+              web:
+                image: ${CARRO_E_CASA_WEB_IMAGE}
+                build: null
+            EOF
+
+            mkdir -p "$ROOT/backups"
+            timestamp=$(date -u +%Y%m%dT%H%M%SZ)
+            backup="$ROOT/backups/predeploy-${timestamp}-${VERSION}.sql.gz"
+
+            echo "[deploy] Criando backup em $backup"
+            docker compose -p "$COMPOSE_PROJECT" exec -T db pg_dump -U carro_casa -d carro_casa | gzip > "$backup"
+            test -s "$backup"
+
+            cat > .release.env <<EOF
+            CARRO_E_CASA_WEB_IMAGE=${IMAGE}
+            PRODUCTION_VERSION=${VERSION}
+            EOF
+
+            echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USERNAME" --password-stdin
+
+            compose="docker compose -p $COMPOSE_PROJECT --env-file .env --env-file .release.env -f docker-compose.yml -f docker-compose.ghcr.yml"
+            $compose pull web
+            $compose run --rm --no-deps web npm run db:deploy
+            $compose up -d --no-deps --remove-orphans web
+
+            wait_for_url() {
+              name="$1"
+              url="$2"
+              for attempt in $(seq 1 24); do
+                if curl -fsS --max-time 5 "$url" >/dev/null; then
+                  echo "[deploy] $name saudavel"
+                  return 0
+                fi
+                sleep 5
+              done
+              echo "[deploy] $name nao respondeu em 120 segundos: $url"
+              $compose ps
+              return 1
+            }
+
+            wait_for_url "landing" "https://lojacarroecasa.com.br/"
+            wait_for_url "empresas" "https://empresas.lojacarroecasa.com.br/"
+            wait_for_url "admin login" "https://lojacarroecasa.com.br/admin/login"
+            $compose ps
+
+  notify-telegram:
+    name: Notificar resultado no Telegram
+    runs-on: ubuntu-latest
+    needs:
+      - validate
+      - publish-images
+      - deploy
+    if: always()
+    steps:
+      - name: Enviar notificacao Telegram
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          VALIDATE_RESULT: ${{ needs.validate.result }}
+          PUBLISH_RESULT: ${{ needs.publish-images.result }}
+          DEPLOY_RESULT: ${{ needs.deploy.result }}
+          COMMIT_SHA: ${{ github.sha }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -eu
+
+          if [ -z "${TELEGRAM_BOT_TOKEN:-}" ] || [ -z "${TELEGRAM_CHAT_ID:-}" ]; then
+            echo "[telegram] Secrets TELEGRAM_BOT_TOKEN/TELEGRAM_CHAT_ID ausentes. Notificacao ignorada."
+            exit 0
+          fi
+
+          if [ "$DEPLOY_RESULT" = "success" ]; then
+            status="[OK] Deploy Carro & Casa concluido"
+          else
+            status="[ERRO] Deploy Carro & Casa falhou"
+          fi
+
+          message="$status
+          Validacao: $VALIDATE_RESULT
+          Publish: $PUBLISH_RESULT
+          Deploy: $DEPLOY_RESULT
+          Commit: $COMMIT_SHA
+          Run: $RUN_URL"
+
+          curl -fsS \
+            -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+            -d "chat_id=${TELEGRAM_CHAT_ID}" \
+            -d "disable_web_page_preview=true" \
+            --data-urlencode "text=${message}"
