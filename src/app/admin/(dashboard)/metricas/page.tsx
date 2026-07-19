@@ -16,6 +16,7 @@ import { CampaignLinkBuilder } from "@/components/admin/campaign-link-builder";
 import { Card } from "@/components/ui/card";
 import { requireCapability } from "@/lib/admin-auth";
 import { getSiteSetting } from "@/lib/content";
+import { buildExecutiveMetrics, formatMetricPercent } from "@/lib/metrics-summary";
 import { prisma } from "@/lib/prisma";
 import { buildWhatsappUrl, cn } from "@/lib/utils";
 import type { LucideIcon } from "lucide-react";
@@ -232,14 +233,13 @@ export default async function MetricsPage({ searchParams }: MetricsPageProps) {
     prisma.analyticsEvent.groupBy({ by: ["utmSource"], orderBy: { utmSource: "asc" } }),
   ]);
 
-  const pageViews = events.filter((event) => event.eventName === "page_view").length;
-  const whatsappClicks = events.filter((event) => event.eventName === "click_whatsapp").length;
-  const contactClicks = events.filter((event) =>
-    ["click_whatsapp", "click_email", "click_maps"].includes(event.eventName),
-  ).length;
-  const visitors = new Set(events.map((event) => event.visitorId).filter(Boolean)).size;
-  const sessions = new Set(events.map((event) => event.sessionId).filter(Boolean)).size;
-  const conversionRate = pageViews ? (whatsappClicks / pageViews) * 100 : 0;
+  const executive = buildExecutiveMetrics(events);
+  const pageViews = executive.pageViews;
+  const whatsappClicks = executive.whatsappClicks;
+  const contactClicks = executive.contactClicks;
+  const visitors = executive.visitors;
+  const sessions = executive.sessions;
+  const conversionRate = executive.conversionRate;
 
   const previousStart = new Date(start);
   previousStart.setDate(previousStart.getDate() - Math.max(1, Math.ceil((end.getTime() - start.getTime()) / 86400000)));
@@ -276,7 +276,7 @@ export default async function MetricsPage({ searchParams }: MetricsPageProps) {
   const pages = groupCount(events.filter((event) => event.eventName === "page_view"), (event) => event.pagePath).slice(0, 8);
   const ctas = groupCount(events.filter((event) => event.eventName.startsWith("click_")), (event) => event.eventLabel || eventNameLabel(event.eventName)).slice(0, 8);
   const recentEvents = events.slice(0, 30);
-  const interactions = events.filter((event) => event.eventName !== "page_view").length;
+  const interactions = executive.interactions;
   const topSource = sources[0]?.label || "Sem dados";
   const topPage = pages[0]?.label || "Sem dados";
   const topCta = ctas[0]?.label || "Sem dados";
@@ -288,11 +288,11 @@ export default async function MetricsPage({ searchParams }: MetricsPageProps) {
     ["Acessos", pageViews, "Visualizações de página", View],
     ["Visitantes", visitors, "Navegadores únicos estimados", Users],
     ["Sessões", sessions, "Sessões do período", BarChart3],
-    ["WhatsApp", whatsappClicks, `${conversionRate.toFixed(1).replace(".", ",")}% por acesso`, MousePointerClick],
+    ["WhatsApp", whatsappClicks, `${formatMetricPercent(conversionRate)} por acesso`, MousePointerClick],
     ["Contatos", contactClicks, "WhatsApp, e-mail e localização", MousePointerClick],
   ];
   const executiveCards: Array<[string, string, string, LucideIcon]> = [
-    ["Taxa WhatsApp", `${conversionRate.toFixed(1).replace(".", ",")}%`, "Cliques no WhatsApp por acesso", Target],
+    ["Taxa WhatsApp", formatMetricPercent(conversionRate), "Cliques no WhatsApp por acesso", Target],
     ["Melhor origem", topSource, `${compactNumber(sources[0]?.count || 0)} acessos`, TrendingUp],
     ["Página principal", topPage, `${compactNumber(pages[0]?.count || 0)} visualizações`, View],
   ];
