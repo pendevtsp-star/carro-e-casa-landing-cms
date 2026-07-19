@@ -117,11 +117,19 @@ export function buildExecutiveMetrics(events: MetricSummaryEvent[]): ExecutiveMe
       tone: "neutral",
     });
   } else {
-    insights.push({
-      title: "Canal principal",
-      text: `${topSource.label} foi o canal com mais acessos no período.`,
-      tone: topSource.count > 0 ? "good" : "neutral",
-    });
+    if (pageViewEvents.length) {
+      insights.push({
+        title: "Canal principal",
+        text: `${topSource.label} foi o canal com mais acessos no período.`,
+        tone: "good",
+      });
+    } else {
+      insights.push({
+        title: "Ações sem acessos registrados",
+        text: "Há interações registradas, mas nenhum acesso à landing neste período.",
+        tone: "neutral",
+      });
+    }
 
     if (whatsappClicks > 0) {
       insights.push({

@@ -333,165 +333,165 @@ export default async function MetricsPage({ searchParams }: MetricsPageProps) {
         description="Use esta área para investigar canais, campanhas, páginas, dispositivos e eventos específicos."
       >
         <Card className="p-4">
-        <form className="grid gap-3 md:grid-cols-6">
-          <label className="grid gap-1 text-sm font-medium text-brand-dark">
-            Período
-            <select name="period" defaultValue={period} className="rounded-md border border-brand-dark/15 bg-white px-3 py-2 text-sm">
-              <option value="today">Hoje</option>
-              <option value="7">Últimos 7 dias</option>
-              <option value="30">Últimos 30 dias</option>
-              <option value="90">Últimos 90 dias</option>
-              <option value="month">Este mês</option>
-              <option value="custom">Personalizado</option>
-            </select>
-          </label>
-          <label className="grid gap-1 text-sm font-medium text-brand-dark">
-            Início
-            <input name="start" type="date" defaultValue={formatInputDate(start)} className="rounded-md border border-brand-dark/15 bg-white px-3 py-2 text-sm" />
-          </label>
-          <label className="grid gap-1 text-sm font-medium text-brand-dark">
-            Fim
-            <input name="end" type="date" defaultValue={formatInputDate(end)} className="rounded-md border border-brand-dark/15 bg-white px-3 py-2 text-sm" />
-          </label>
-          <label className="grid gap-1 text-sm font-medium text-brand-dark">
-            Evento
-            <select name="event" defaultValue={params.event || ""} className="rounded-md border border-brand-dark/15 bg-white px-3 py-2 text-sm">
-              <option value="">Todos</option>
-              {allEventNames.map((item) => (
-                <option key={item.eventName} value={item.eventName}>{eventNameLabel(item.eventName)}</option>
-              ))}
-            </select>
-          </label>
-          <label className="grid gap-1 text-sm font-medium text-brand-dark">
-            Dispositivo
-            <select name="device" defaultValue={params.device || ""} className="rounded-md border border-brand-dark/15 bg-white px-3 py-2 text-sm">
-              <option value="">Todos</option>
-              {allDevices.map((item) => (
-                <option key={item.deviceType} value={item.deviceType}>{deviceLabels[item.deviceType] || item.deviceType}</option>
-              ))}
-            </select>
-          </label>
-          <label className="grid gap-1 text-sm font-medium text-brand-dark">
-            Origem
-            <select name="source" defaultValue={params.source || ""} className="rounded-md border border-brand-dark/15 bg-white px-3 py-2 text-sm">
-              <option value="">Todas</option>
-              <option value="__direct">Direto / sem UTM</option>
-              {allSources
-                .filter((item) => item.utmSource)
-                .map((item) => (
-                  <option key={item.utmSource} value={item.utmSource || ""}>{item.utmSource}</option>
+          <form className="grid gap-3 md:grid-cols-6">
+            <label className="grid gap-1 text-sm font-medium text-brand-dark">
+              Período
+              <select name="period" defaultValue={period} className="rounded-md border border-brand-dark/15 bg-white px-3 py-2 text-sm">
+                <option value="today">Hoje</option>
+                <option value="7">Últimos 7 dias</option>
+                <option value="30">Últimos 30 dias</option>
+                <option value="90">Últimos 90 dias</option>
+                <option value="month">Este mês</option>
+                <option value="custom">Personalizado</option>
+              </select>
+            </label>
+            <label className="grid gap-1 text-sm font-medium text-brand-dark">
+              Início
+              <input name="start" type="date" defaultValue={formatInputDate(start)} className="rounded-md border border-brand-dark/15 bg-white px-3 py-2 text-sm" />
+            </label>
+            <label className="grid gap-1 text-sm font-medium text-brand-dark">
+              Fim
+              <input name="end" type="date" defaultValue={formatInputDate(end)} className="rounded-md border border-brand-dark/15 bg-white px-3 py-2 text-sm" />
+            </label>
+            <label className="grid gap-1 text-sm font-medium text-brand-dark">
+              Evento
+              <select name="event" defaultValue={params.event || ""} className="rounded-md border border-brand-dark/15 bg-white px-3 py-2 text-sm">
+                <option value="">Todos</option>
+                {allEventNames.map((item) => (
+                  <option key={item.eventName} value={item.eventName}>{eventNameLabel(item.eventName)}</option>
                 ))}
-            </select>
-          </label>
-          <label className="grid gap-1 text-sm font-medium text-brand-dark md:col-span-2">
-            Categoria
-            <select name="category" defaultValue={params.category || ""} className="rounded-md border border-brand-dark/15 bg-white px-3 py-2 text-sm">
-              <option value="">Todas</option>
-              {allCategories.map((item) => (
-                <option key={item.eventCategory} value={item.eventCategory}>{categoryLabels[item.eventCategory] || item.eventCategory}</option>
-              ))}
-            </select>
-          </label>
-          <div className="flex items-end gap-2 md:col-span-4">
-            <button type="submit" className="rounded-md bg-brand-dark px-4 py-2 text-sm font-semibold text-white transition hover:bg-black">
-              Aplicar filtros
-            </button>
-            <a href="/admin/metricas" className="rounded-md border border-brand-dark/15 bg-white px-4 py-2 text-sm font-semibold text-brand-dark transition hover:bg-brand/10">
-              Limpar
-            </a>
-          </div>
-        </form>
+              </select>
+            </label>
+            <label className="grid gap-1 text-sm font-medium text-brand-dark">
+              Dispositivo
+              <select name="device" defaultValue={params.device || ""} className="rounded-md border border-brand-dark/15 bg-white px-3 py-2 text-sm">
+                <option value="">Todos</option>
+                {allDevices.map((item) => (
+                  <option key={item.deviceType} value={item.deviceType}>{deviceLabels[item.deviceType] || item.deviceType}</option>
+                ))}
+              </select>
+            </label>
+            <label className="grid gap-1 text-sm font-medium text-brand-dark">
+              Origem
+              <select name="source" defaultValue={params.source || ""} className="rounded-md border border-brand-dark/15 bg-white px-3 py-2 text-sm">
+                <option value="">Todas</option>
+                <option value="__direct">Direto / sem UTM</option>
+                {allSources
+                  .filter((item) => item.utmSource)
+                  .map((item) => (
+                    <option key={item.utmSource} value={item.utmSource || ""}>{item.utmSource}</option>
+                  ))}
+              </select>
+            </label>
+            <label className="grid gap-1 text-sm font-medium text-brand-dark md:col-span-2">
+              Categoria
+              <select name="category" defaultValue={params.category || ""} className="rounded-md border border-brand-dark/15 bg-white px-3 py-2 text-sm">
+                <option value="">Todas</option>
+                {allCategories.map((item) => (
+                  <option key={item.eventCategory} value={item.eventCategory}>{categoryLabels[item.eventCategory] || item.eventCategory}</option>
+                ))}
+              </select>
+            </label>
+            <div className="flex items-end gap-2 md:col-span-4">
+              <button type="submit" className="rounded-md bg-brand-dark px-4 py-2 text-sm font-semibold text-white transition hover:bg-black">
+                Aplicar filtros
+              </button>
+              <a href="/admin/metricas" className="rounded-md border border-brand-dark/15 bg-white px-4 py-2 text-sm font-semibold text-brand-dark transition hover:bg-brand/10">
+                Limpar
+              </a>
+            </div>
+          </form>
         </Card>
 
         <div className="grid gap-4 lg:grid-cols-2">
-        <Card className="p-5">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-dark/45">
-                Acessos
-              </p>
-              <h2 className="mt-2 text-xl font-semibold text-brand-dark">Chegada e alcance</h2>
+          <Card className="p-5">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-dark/45">
+                  Acessos
+                </p>
+                <h2 className="mt-2 text-xl font-semibold text-brand-dark">Chegada e alcance</h2>
+              </div>
+              <View className="size-6 text-brand-dark/40" aria-hidden />
             </div>
-            <View className="size-6 text-brand-dark/40" aria-hidden />
-          </div>
-          <div className="mt-5 grid grid-cols-3 gap-3">
-            <MiniStat label="Acessos" value={compactNumber(pageViews)} />
-            <MiniStat label="Visitantes" value={compactNumber(visitors)} />
-            <MiniStat label="Sessões" value={compactNumber(sessions)} />
-          </div>
-        </Card>
+            <div className="mt-5 grid grid-cols-3 gap-3">
+              <MiniStat label="Acessos" value={compactNumber(pageViews)} />
+              <MiniStat label="Visitantes" value={compactNumber(visitors)} />
+              <MiniStat label="Sessões" value={compactNumber(sessions)} />
+            </div>
+          </Card>
 
-        <Card className="p-5">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-dark/45">
-                Interações
-              </p>
-              <h2 className="mt-2 text-xl font-semibold text-brand-dark">Intenção e contato</h2>
+          <Card className="p-5">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-dark/45">
+                  Interações
+                </p>
+                <h2 className="mt-2 text-xl font-semibold text-brand-dark">Intenção e contato</h2>
+              </div>
+              <MousePointerClick className="size-6 text-brand-dark/40" aria-hidden />
             </div>
-            <MousePointerClick className="size-6 text-brand-dark/40" aria-hidden />
-          </div>
-          <div className="mt-5 grid grid-cols-3 gap-3">
-            <MiniStat label="Cliques" value={compactNumber(interactions)} />
-            <MiniStat label="WhatsApp" value={compactNumber(whatsappClicks)} />
-            <MiniStat label="Taxa" value={`${engagementRate.toFixed(1).replace(".", ",")}%`} />
-          </div>
-        </Card>
+            <div className="mt-5 grid grid-cols-3 gap-3">
+              <MiniStat label="Cliques" value={compactNumber(interactions)} />
+              <MiniStat label="WhatsApp" value={compactNumber(whatsappClicks)} />
+              <MiniStat label="Taxa" value={`${engagementRate.toFixed(1).replace(".", ",")}%`} />
+            </div>
+          </Card>
         </div>
 
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-        {summaryCards.map(([label, value, detail, Icon]) => (
-          <Card key={String(label)} className="p-5">
-            <div className="flex items-center justify-between gap-3">
-              <p className="text-sm text-brand-dark/55">{label as string}</p>
-              <Icon className="size-5 text-brand-dark/45" aria-hidden />
-            </div>
-            <p className="mt-3 text-3xl font-semibold text-brand-dark">{compactNumber(value)}</p>
-            <p className="mt-1 text-xs leading-5 text-brand-dark/55">{detail}</p>
-          </Card>
-        ))}
+          {summaryCards.map(([label, value, detail, Icon]) => (
+            <Card key={String(label)} className="p-5">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-sm text-brand-dark/55">{label as string}</p>
+                <Icon className="size-5 text-brand-dark/45" aria-hidden />
+              </div>
+              <p className="mt-3 text-3xl font-semibold text-brand-dark">{compactNumber(value)}</p>
+              <p className="mt-1 text-xs leading-5 text-brand-dark/55">{detail}</p>
+            </Card>
+          ))}
         </div>
 
         <Card className="p-5">
-        <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-          <div>
-            <h2 className="text-lg font-semibold text-brand-dark">Evolução diária</h2>
-            <p className="text-sm text-brand-dark/58">Acessos e cliques registrados no período filtrado.</p>
+          <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+            <div>
+              <h2 className="text-lg font-semibold text-brand-dark">Evolução diária</h2>
+              <p className="text-sm text-brand-dark/58">Acessos e cliques registrados no período filtrado.</p>
+            </div>
+            <div className={cn("inline-flex items-center gap-1 text-sm font-semibold", pageViewDelta === null || pageViewDelta >= 0 ? "text-emerald-700" : "text-red-700")}>
+              {pageViewDelta === null ? null : pageViewDelta >= 0 ? <ArrowUpRight className="size-4" /> : <ArrowDownRight className="size-4" />}
+              {pageViewDelta === null ? "Sem período anterior" : `${Math.abs(pageViewDelta).toFixed(1).replace(".", ",")}% vs. período anterior`}
+            </div>
           </div>
-          <div className={cn("inline-flex items-center gap-1 text-sm font-semibold", pageViewDelta === null || pageViewDelta >= 0 ? "text-emerald-700" : "text-red-700")}>
-            {pageViewDelta === null ? null : pageViewDelta >= 0 ? <ArrowUpRight className="size-4" /> : <ArrowDownRight className="size-4" />}
-            {pageViewDelta === null ? "Sem período anterior" : `${Math.abs(pageViewDelta).toFixed(1).replace(".", ",")}% vs. período anterior`}
-          </div>
-        </div>
-        <div className="mt-6 grid min-h-64 grid-cols-[auto_1fr] gap-x-3 gap-y-3">
-          {timeline.length ? timeline.map((item) => (
-            <div key={item.label} className="contents">
-              <span className="py-1 text-xs font-medium text-brand-dark/48">{item.label}</span>
-              <div className="grid gap-1">
-                <div className="h-3 rounded-full bg-brand-dark/8">
-                  <div className="h-3 rounded-full bg-brand-dark" style={{ width: `${Math.max(4, (item.views / maxTimelineValue) * 100)}%` }} />
-                </div>
-                <div className="h-3 rounded-full bg-brand/20">
-                  <div className="h-3 rounded-full bg-brand" style={{ width: `${Math.max(4, (item.clicks / maxTimelineValue) * 100)}%` }} />
+          <div className="mt-6 grid min-h-64 grid-cols-[auto_1fr] gap-x-3 gap-y-3">
+            {timeline.length ? timeline.map((item) => (
+              <div key={item.label} className="contents">
+                <span className="py-1 text-xs font-medium text-brand-dark/48">{item.label}</span>
+                <div className="grid gap-1">
+                  <div className="h-3 rounded-full bg-brand-dark/8">
+                    <div className="h-3 rounded-full bg-brand-dark" style={{ width: `${Math.max(4, (item.views / maxTimelineValue) * 100)}%` }} />
+                  </div>
+                  <div className="h-3 rounded-full bg-brand/20">
+                    <div className="h-3 rounded-full bg-brand" style={{ width: `${Math.max(4, (item.clicks / maxTimelineValue) * 100)}%` }} />
+                  </div>
                 </div>
               </div>
-            </div>
-          )) : (
-            <p className="col-span-2 text-sm text-brand-dark/58">Ainda não há dados para o período selecionado.</p>
-          )}
-        </div>
-        <div className="mt-4 flex gap-4 text-xs text-brand-dark/58">
-          <span className="inline-flex items-center gap-2"><span className="size-3 rounded-full bg-brand-dark" /> Acessos</span>
-          <span className="inline-flex items-center gap-2"><span className="size-3 rounded-full bg-brand" /> Cliques</span>
-        </div>
+            )) : (
+              <p className="col-span-2 text-sm text-brand-dark/58">Ainda não há dados para o período selecionado.</p>
+            )}
+          </div>
+          <div className="mt-4 flex gap-4 text-xs text-brand-dark/58">
+            <span className="inline-flex items-center gap-2"><span className="size-3 rounded-full bg-brand-dark" /> Acessos</span>
+            <span className="inline-flex items-center gap-2"><span className="size-3 rounded-full bg-brand" /> Cliques</span>
+          </div>
         </Card>
 
         <div className="grid gap-4 xl:grid-cols-2">
-        <MetricList title="Eventos mais registrados" items={eventsByName.map((item) => ({ ...item, label: eventNameLabel(item.label) }))} total={events.length} />
-        <MetricList title="Botões e links mais clicados" items={ctas} total={Math.max(1, ctas.reduce((sum, item) => sum + item.count, 0))} />
-        <MetricList title="Origem dos acessos" items={sources} total={Math.max(1, pageViews)} />
-        <MetricList title="Dispositivos" items={devices} total={Math.max(1, events.length)} />
-        <MetricList title="Páginas mais acessadas" items={pages} total={Math.max(1, pageViews)} />
+          <MetricList title="Eventos mais registrados" items={eventsByName.map((item) => ({ ...item, label: eventNameLabel(item.label) }))} total={events.length} />
+          <MetricList title="Botões e links mais clicados" items={ctas} total={Math.max(1, ctas.reduce((sum, item) => sum + item.count, 0))} />
+          <MetricList title="Origem dos acessos" items={sources} total={Math.max(1, pageViews)} />
+          <MetricList title="Dispositivos" items={devices} total={Math.max(1, events.length)} />
+          <MetricList title="Páginas mais acessadas" items={pages} total={Math.max(1, pageViews)} />
         </div>
 
         <CampaignLinkBuilder
@@ -501,46 +501,46 @@ export default async function MetricsPage({ searchParams }: MetricsPageProps) {
         />
 
         <Card className="overflow-hidden">
-        <div className="border-b border-brand-dark/10 p-5">
-          <h2 className="text-lg font-semibold text-brand-dark">Eventos recentes</h2>
-          <p className="mt-1 text-sm text-brand-dark/58">Últimos registros conforme os filtros aplicados.</p>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[820px] text-left text-sm">
-            <thead className="bg-background text-xs uppercase tracking-[0.14em] text-brand-dark/45">
-              <tr>
-                <th className="px-5 py-3">Data</th>
-                <th className="px-5 py-3">Evento</th>
-                <th className="px-5 py-3">Detalhe</th>
-                <th className="px-5 py-3">Página</th>
-                <th className="px-5 py-3">Origem</th>
-                <th className="px-5 py-3">Dispositivo</th>
-              </tr>
-            </thead>
-            <tbody>
-              {recentEvents.map((event) => (
-                <tr key={event.id} className="border-t border-brand-dark/8">
-                  <td className="px-5 py-3 text-brand-dark/58">{formatDateTime(event.createdAt)}</td>
-                  <td className="px-5 py-3 font-semibold text-brand-dark">{eventNameLabel(event.eventName)}</td>
-                  <td className="px-5 py-3 text-brand-dark/64">{event.eventLabel || event.targetUrl || "-"}</td>
-                  <td className="px-5 py-3 text-brand-dark/64">{event.pagePath}</td>
-                  <td className="px-5 py-3 text-brand-dark/64">{sourceLabel(event.utmSource)}</td>
-                  <td className="px-5 py-3 text-brand-dark/64">
-                    {deviceLabels[event.deviceType] || event.deviceType}
-                    {event.browser ? ` / ${event.browser}` : ""}
-                  </td>
-                </tr>
-              ))}
-              {!recentEvents.length ? (
+          <div className="border-b border-brand-dark/10 p-5">
+            <h2 className="text-lg font-semibold text-brand-dark">Eventos recentes</h2>
+            <p className="mt-1 text-sm text-brand-dark/58">Últimos registros conforme os filtros aplicados.</p>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[820px] text-left text-sm">
+              <thead className="bg-background text-xs uppercase tracking-[0.14em] text-brand-dark/45">
                 <tr>
-                  <td colSpan={6} className="px-5 py-8 text-center text-brand-dark/58">
-                    Nenhum evento registrado para os filtros atuais.
-                  </td>
+                  <th className="px-5 py-3">Data</th>
+                  <th className="px-5 py-3">Evento</th>
+                  <th className="px-5 py-3">Detalhe</th>
+                  <th className="px-5 py-3">Página</th>
+                  <th className="px-5 py-3">Origem</th>
+                  <th className="px-5 py-3">Dispositivo</th>
                 </tr>
-              ) : null}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {recentEvents.map((event) => (
+                  <tr key={event.id} className="border-t border-brand-dark/8">
+                    <td className="px-5 py-3 text-brand-dark/58">{formatDateTime(event.createdAt)}</td>
+                    <td className="px-5 py-3 font-semibold text-brand-dark">{eventNameLabel(event.eventName)}</td>
+                    <td className="px-5 py-3 text-brand-dark/64">{event.eventLabel || event.targetUrl || "-"}</td>
+                    <td className="px-5 py-3 text-brand-dark/64">{event.pagePath}</td>
+                    <td className="px-5 py-3 text-brand-dark/64">{sourceLabel(event.utmSource)}</td>
+                    <td className="px-5 py-3 text-brand-dark/64">
+                      {deviceLabels[event.deviceType] || event.deviceType}
+                      {event.browser ? ` / ${event.browser}` : ""}
+                    </td>
+                  </tr>
+                ))}
+                {!recentEvents.length ? (
+                  <tr>
+                    <td colSpan={6} className="px-5 py-8 text-center text-brand-dark/58">
+                      Nenhum evento registrado para os filtros atuais.
+                    </td>
+                  </tr>
+                ) : null}
+              </tbody>
+            </table>
+          </div>
         </Card>
       </MetricsDetailSection>
     </AdminPage>
@@ -571,8 +571,8 @@ function MetricList({
       <div className="mt-4 grid gap-3">
         {items.length ? items.map((item) => (
           <div key={item.label} className="grid gap-1">
-            <div className="flex items-center justify-between gap-3 text-sm">
-              <span className="truncate font-medium text-brand-dark">{item.label}</span>
+            <div className="flex items-start justify-between gap-3 text-sm">
+              <span className="min-w-0 break-words font-medium text-brand-dark">{item.label}</span>
               <span className="shrink-0 text-brand-dark/58">{compactNumber(item.count)} · {percent(item.count, total)}</span>
             </div>
             <div className="h-2 rounded-full bg-brand-dark/8">

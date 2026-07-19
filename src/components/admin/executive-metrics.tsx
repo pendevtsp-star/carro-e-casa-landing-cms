@@ -34,7 +34,7 @@ export function ExecutiveMetricsGrid({ metrics }: { metrics: ExecutiveMetric[] }
   return (
     <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
       {metrics.map((metric) => (
-        <ExecutiveMetricCard key={metric.label} metric={metric} />
+        <ExecutiveMetricCard key={`${metric.label}-${metric.detail}`} metric={metric} />
       ))}
     </div>
   );
