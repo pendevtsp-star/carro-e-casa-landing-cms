@@ -58,6 +58,7 @@ export function Footer({
             <Link href="/faq" className="hover:text-white">FAQ</Link>
             <Link href="/termos-de-uso" className="hover:text-white">Termos de Uso</Link>
             <Link href="/privacidade" className="hover:text-white">Política de Privacidade</Link>
+            <Link href="/admin" className="text-white/38 transition hover:text-white">Painel</Link>
           </div>
         </div>
 
