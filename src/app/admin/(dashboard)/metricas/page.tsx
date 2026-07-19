@@ -5,14 +5,13 @@ import {
   CalendarDays,
   Download,
   MousePointerClick,
-  Target,
-  TrendingUp,
   Users,
   View,
 } from "lucide-react";
 
 import { AdminPage } from "@/components/admin/admin-page";
 import { CampaignLinkBuilder } from "@/components/admin/campaign-link-builder";
+import { ExecutiveMetricsGrid, InsightList } from "@/components/admin/executive-metrics";
 import { Card } from "@/components/ui/card";
 import { requireCapability } from "@/lib/admin-auth";
 import { getSiteSetting } from "@/lib/content";
@@ -277,9 +276,6 @@ export default async function MetricsPage({ searchParams }: MetricsPageProps) {
   const ctas = groupCount(events.filter((event) => event.eventName.startsWith("click_")), (event) => event.eventLabel || eventNameLabel(event.eventName)).slice(0, 8);
   const recentEvents = events.slice(0, 30);
   const interactions = executive.interactions;
-  const topSource = sources[0]?.label || "Sem dados";
-  const topPage = pages[0]?.label || "Sem dados";
-  const topCta = ctas[0]?.label || "Sem dados";
   const engagementRate = pageViews ? (interactions / pageViews) * 100 : 0;
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://lojacarroecasa.com.br";
   const whatsappUrl = buildWhatsappUrl(settings.whatsappNumber, settings.whatsappMessage);
@@ -291,16 +287,11 @@ export default async function MetricsPage({ searchParams }: MetricsPageProps) {
     ["WhatsApp", whatsappClicks, `${formatMetricPercent(conversionRate)} por acesso`, MousePointerClick],
     ["Contatos", contactClicks, "WhatsApp, e-mail e localização", MousePointerClick],
   ];
-  const executiveCards: Array<[string, string, string, LucideIcon]> = [
-    ["Taxa WhatsApp", formatMetricPercent(conversionRate), "Cliques no WhatsApp por acesso", Target],
-    ["Melhor origem", topSource, `${compactNumber(sources[0]?.count || 0)} acessos`, TrendingUp],
-    ["Página principal", topPage, `${compactNumber(pages[0]?.count || 0)} visualizações`, View],
-  ];
 
   return (
     <AdminPage
-      title="Métricas"
-      description="Acompanhe acessos, origem do tráfego, dispositivos e cliques importantes da landing."
+      title="Desempenho da landing"
+      description="Veja em poucos segundos quantas pessoas chegaram, quem demonstrou interesse e quais canais trouxeram mais resultado."
     >
       <div className="grid gap-4 lg:grid-cols-[1fr_auto] lg:items-center">
         <div className="flex flex-wrap gap-2">
@@ -333,6 +324,9 @@ export default async function MetricsPage({ searchParams }: MetricsPageProps) {
           Exportar CSV
         </a>
       </div>
+
+      <ExecutiveMetricsGrid metrics={executive.cards} />
+      <InsightList insights={executive.insights} />
 
       <Card className="p-4">
         <form className="grid gap-3 md:grid-cols-6">
@@ -439,55 +433,6 @@ export default async function MetricsPage({ searchParams }: MetricsPageProps) {
             <MiniStat label="Taxa" value={`${engagementRate.toFixed(1).replace(".", ",")}%`} />
           </div>
         </Card>
-      </div>
-
-      <Card className="bg-brand-dark p-5 text-white">
-        <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-[0.22em] text-brand/80">
-              Relatório para cliente
-            </p>
-            <h2 className="mt-2 text-2xl font-semibold">Resumo executivo do período</h2>
-          </div>
-          <p className="text-sm text-white/58">
-            {formatInputDate(start)} até {formatInputDate(end)}
-          </p>
-        </div>
-        <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-          <ClientInsight
-            title="Quantas pessoas chegaram"
-            value={compactNumber(visitors || pageViews)}
-            text={visitors ? "visitantes únicos estimados" : "acessos registrados"}
-          />
-          <ClientInsight
-            title="Quem demonstrou interesse"
-            value={compactNumber(contactClicks || interactions)}
-            text={contactClicks ? "ações de contato" : "interações registradas"}
-          />
-          <ClientInsight
-            title="Canal que mais trouxe visitas"
-            value={topSource}
-            text={`${compactNumber(sources[0]?.count || 0)} acessos`}
-          />
-          <ClientInsight
-            title="Botão com mais ação"
-            value={topCta}
-            text={`${compactNumber(ctas[0]?.count || 0)} cliques`}
-          />
-        </div>
-      </Card>
-
-      <div className="grid gap-4 md:grid-cols-3">
-        {executiveCards.map(([label, value, detail, Icon]) => (
-          <Card key={label} className="p-5">
-            <div className="flex items-center justify-between gap-3">
-              <p className="text-sm text-brand-dark/55">{label}</p>
-              <Icon className="size-5 text-brand-dark/45" aria-hidden />
-            </div>
-            <p className="mt-3 truncate text-2xl font-semibold text-brand-dark">{value}</p>
-            <p className="mt-1 text-xs leading-5 text-brand-dark/55">{detail}</p>
-          </Card>
-        ))}
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
@@ -602,24 +547,6 @@ function MiniStat({ label, value }: { label: string; value: string }) {
     <div className="rounded-lg border border-brand-dark/8 bg-background p-3">
       <p className="text-xs font-medium text-brand-dark/48">{label}</p>
       <p className="mt-1 truncate text-xl font-semibold text-brand-dark">{value}</p>
-    </div>
-  );
-}
-
-function ClientInsight({
-  title,
-  value,
-  text,
-}: {
-  title: string;
-  value: string;
-  text: string;
-}) {
-  return (
-    <div className="rounded-lg border border-white/12 bg-white/[0.07] p-4">
-      <p className="text-xs font-medium text-white/52">{title}</p>
-      <p className="mt-2 truncate text-2xl font-semibold text-white">{value}</p>
-      <p className="mt-1 text-xs leading-5 text-white/58">{text}</p>
     </div>
   );
 }
