@@ -11,7 +11,7 @@ import {
 
 import { AdminPage } from "@/components/admin/admin-page";
 import { CampaignLinkBuilder } from "@/components/admin/campaign-link-builder";
-import { ExecutiveMetricsGrid, InsightList } from "@/components/admin/executive-metrics";
+import { ExecutiveMetricsGrid, InsightList, MetricsDetailSection } from "@/components/admin/executive-metrics";
 import { Card } from "@/components/ui/card";
 import { requireCapability } from "@/lib/admin-auth";
 import { getSiteSetting } from "@/lib/content";
@@ -328,7 +328,11 @@ export default async function MetricsPage({ searchParams }: MetricsPageProps) {
       <ExecutiveMetricsGrid metrics={executive.cards} />
       <InsightList insights={executive.insights} />
 
-      <Card className="p-4">
+      <MetricsDetailSection
+        title="Análise detalhada"
+        description="Use esta área para investigar canais, campanhas, páginas, dispositivos e eventos específicos."
+      >
+        <Card className="p-4">
         <form className="grid gap-3 md:grid-cols-6">
           <label className="grid gap-1 text-sm font-medium text-brand-dark">
             Período
@@ -397,9 +401,9 @@ export default async function MetricsPage({ searchParams }: MetricsPageProps) {
             </a>
           </div>
         </form>
-      </Card>
+        </Card>
 
-      <div className="grid gap-4 lg:grid-cols-2">
+        <div className="grid gap-4 lg:grid-cols-2">
         <Card className="p-5">
           <div className="flex items-center justify-between gap-3">
             <div>
@@ -433,9 +437,9 @@ export default async function MetricsPage({ searchParams }: MetricsPageProps) {
             <MiniStat label="Taxa" value={`${engagementRate.toFixed(1).replace(".", ",")}%`} />
           </div>
         </Card>
-      </div>
+        </div>
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
         {summaryCards.map(([label, value, detail, Icon]) => (
           <Card key={String(label)} className="p-5">
             <div className="flex items-center justify-between gap-3">
@@ -446,9 +450,9 @@ export default async function MetricsPage({ searchParams }: MetricsPageProps) {
             <p className="mt-1 text-xs leading-5 text-brand-dark/55">{detail}</p>
           </Card>
         ))}
-      </div>
+        </div>
 
-      <Card className="p-5">
+        <Card className="p-5">
         <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
           <div>
             <h2 className="text-lg font-semibold text-brand-dark">Evolução diária</h2>
@@ -480,23 +484,23 @@ export default async function MetricsPage({ searchParams }: MetricsPageProps) {
           <span className="inline-flex items-center gap-2"><span className="size-3 rounded-full bg-brand-dark" /> Acessos</span>
           <span className="inline-flex items-center gap-2"><span className="size-3 rounded-full bg-brand" /> Cliques</span>
         </div>
-      </Card>
+        </Card>
 
-      <div className="grid gap-4 xl:grid-cols-2">
+        <div className="grid gap-4 xl:grid-cols-2">
         <MetricList title="Eventos mais registrados" items={eventsByName.map((item) => ({ ...item, label: eventNameLabel(item.label) }))} total={events.length} />
         <MetricList title="Botões e links mais clicados" items={ctas} total={Math.max(1, ctas.reduce((sum, item) => sum + item.count, 0))} />
         <MetricList title="Origem dos acessos" items={sources} total={Math.max(1, pageViews)} />
         <MetricList title="Dispositivos" items={devices} total={Math.max(1, events.length)} />
         <MetricList title="Páginas mais acessadas" items={pages} total={Math.max(1, pageViews)} />
-      </div>
+        </div>
 
-      <CampaignLinkBuilder
-        siteUrl={siteUrl}
-        whatsappUrl={whatsappUrl}
-        instagramUrl={settings.instagramUrl}
-      />
+        <CampaignLinkBuilder
+          siteUrl={siteUrl}
+          whatsappUrl={whatsappUrl}
+          instagramUrl={settings.instagramUrl}
+        />
 
-      <Card className="overflow-hidden">
+        <Card className="overflow-hidden">
         <div className="border-b border-brand-dark/10 p-5">
           <h2 className="text-lg font-semibold text-brand-dark">Eventos recentes</h2>
           <p className="mt-1 text-sm text-brand-dark/58">Últimos registros conforme os filtros aplicados.</p>
@@ -537,7 +541,8 @@ export default async function MetricsPage({ searchParams }: MetricsPageProps) {
             </tbody>
           </table>
         </div>
-      </Card>
+        </Card>
+      </MetricsDetailSection>
     </AdminPage>
   );
 }
