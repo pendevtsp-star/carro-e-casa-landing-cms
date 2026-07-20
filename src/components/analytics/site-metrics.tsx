@@ -187,7 +187,7 @@ function sendMetric(metric: MetricPayload) {
   const url = new URL(window.location.href);
   const payload = {
     ...metric,
-    pagePath: `${url.pathname}${url.search}`,
+    pagePath: url.pathname,
     pageTitle: document.title,
     referrer: document.referrer || null,
     ...utmFromUrl(url),

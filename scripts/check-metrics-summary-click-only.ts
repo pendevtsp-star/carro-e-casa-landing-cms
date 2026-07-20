@@ -1,4 +1,4 @@
-import { buildExecutiveMetrics, type MetricSummaryEvent } from "../src/lib/metrics-summary";
+import { buildExecutiveMetrics, formatMetricPageLabel, type MetricSummaryEvent } from "../src/lib/metrics-summary";
 
 const clickOnlyEvents: MetricSummaryEvent[] = [
   {
@@ -31,6 +31,34 @@ if (!metrics.insights.some((insight) => insight.title === "Botão com mais açã
 const emptyMetrics = buildExecutiveMetrics([]);
 if (emptyMetrics.insights.some((insight) => insight.text.includes("foi o canal com mais acessos"))) {
   throw new Error("Empty periods must not claim a winning channel.");
+}
+
+const trackedPageViews: MetricSummaryEvent[] = [
+  {
+    eventName: "page_view",
+    eventLabel: "Página inicial",
+    pagePath: "/?fbclid=abc&utm_source=instagram&utm_campaign=julho",
+    utmSource: "instagram",
+    visitorId: "visitor-2",
+    sessionId: "session-2",
+  },
+  {
+    eventName: "page_view",
+    eventLabel: "Página inicial",
+    pagePath: "/?fbclid=def&utm_source=google&utm_campaign=julho",
+    utmSource: "google",
+    visitorId: "visitor-3",
+    sessionId: "session-3",
+  },
+];
+const trackedMetrics = buildExecutiveMetrics(trackedPageViews);
+
+if (formatMetricPageLabel("/?fbclid=abc") !== "Página inicial") {
+  throw new Error("Tracked home URLs must be displayed as Página inicial.");
+}
+
+if (trackedMetrics.topPage.label !== "Página inicial" || trackedMetrics.topPage.count !== 2) {
+  throw new Error(`Tracked home URLs must be grouped together. Got ${trackedMetrics.topPage.label}: ${trackedMetrics.topPage.count}`);
 }
 
 console.log("Click-only executive metrics harness passed.");

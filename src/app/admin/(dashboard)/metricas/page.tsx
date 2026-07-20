@@ -15,7 +15,7 @@ import { ExecutiveMetricsGrid, InsightList, MetricsDetailSection } from "@/compo
 import { Card } from "@/components/ui/card";
 import { requireCapability } from "@/lib/admin-auth";
 import { getSiteSetting } from "@/lib/content";
-import { buildExecutiveMetrics, formatMetricPercent } from "@/lib/metrics-summary";
+import { buildExecutiveMetrics, formatMetricPageLabel, formatMetricPercent } from "@/lib/metrics-summary";
 import { prisma } from "@/lib/prisma";
 import { buildWhatsappUrl, cn } from "@/lib/utils";
 import type { LucideIcon } from "lucide-react";
@@ -272,7 +272,7 @@ export default async function MetricsPage({ searchParams }: MetricsPageProps) {
   const eventsByName = groupCount(events, (event) => event.eventName).slice(0, 8);
   const sources = groupCount(events.filter((event) => event.eventName === "page_view"), (event) => sourceLabel(event.utmSource)).slice(0, 8);
   const devices = groupCount(events, (event) => deviceLabels[event.deviceType] || event.deviceType);
-  const pages = groupCount(events.filter((event) => event.eventName === "page_view"), (event) => event.pagePath).slice(0, 8);
+  const pages = groupCount(events.filter((event) => event.eventName === "page_view"), (event) => formatMetricPageLabel(event.pagePath)).slice(0, 8);
   const ctas = groupCount(events.filter((event) => event.eventName.startsWith("click_")), (event) => event.eventLabel || eventNameLabel(event.eventName)).slice(0, 8);
   const recentEvents = events.slice(0, 30);
   const interactions = executive.interactions;
@@ -523,7 +523,7 @@ export default async function MetricsPage({ searchParams }: MetricsPageProps) {
                     <td className="px-5 py-3 text-brand-dark/58">{formatDateTime(event.createdAt)}</td>
                     <td className="px-5 py-3 font-semibold text-brand-dark">{eventNameLabel(event.eventName)}</td>
                     <td className="px-5 py-3 text-brand-dark/64">{event.eventLabel || event.targetUrl || "-"}</td>
-                    <td className="px-5 py-3 text-brand-dark/64">{event.pagePath}</td>
+                    <td className="px-5 py-3 text-brand-dark/64">{formatMetricPageLabel(event.pagePath)}</td>
                     <td className="px-5 py-3 text-brand-dark/64">{sourceLabel(event.utmSource)}</td>
                     <td className="px-5 py-3 text-brand-dark/64">
                       {deviceLabels[event.deviceType] || event.deviceType}

@@ -65,6 +65,32 @@ function fallbackTop(label = "Sem dados") {
   return { label, count: 0 };
 }
 
+export function normalizeMetricPagePath(pagePath: string | null | undefined) {
+  const rawPath = pagePath?.trim();
+  if (!rawPath) return "/";
+
+  try {
+    const url = new URL(rawPath, "https://lojacarroecasa.com.br");
+    return url.pathname || "/";
+  } catch {
+    const [withoutQuery] = rawPath.split("?");
+    const [withoutHash] = withoutQuery.split("#");
+    return withoutHash || "/";
+  }
+}
+
+export function formatMetricPageLabel(pagePath: string | null | undefined) {
+  const normalized = normalizeMetricPagePath(pagePath);
+
+  if (normalized === "/") return "Página inicial";
+  if (normalized === "/empresas") return "Empresas";
+  if (normalized === "/faq") return "FAQ";
+  if (normalized === "/privacidade") return "Privacidade";
+  if (normalized === "/termos-de-uso") return "Termos de uso";
+
+  return normalized;
+}
+
 export function buildExecutiveMetrics(events: MetricSummaryEvent[]): ExecutiveMetricsResult {
   const pageViewEvents = events.filter((event) => event.eventName === "page_view");
   const clickEvents = events.filter((event) => event.eventName.startsWith("click_"));
@@ -77,7 +103,7 @@ export function buildExecutiveMetrics(events: MetricSummaryEvent[]): ExecutiveMe
   const conversionRate = pageViews ? (whatsappClicks / pageViews) * 100 : 0;
 
   const topSource = countBy(pageViewEvents, (event) => sourceLabel(event.utmSource))[0] || fallbackTop();
-  const topPage = countBy(pageViewEvents, (event) => event.pagePath)[0] || fallbackTop();
+  const topPage = countBy(pageViewEvents, (event) => formatMetricPageLabel(event.pagePath))[0] || fallbackTop();
   const topCta = countBy(clickEvents, (event) => event.eventLabel || event.eventName)[0] || fallbackTop();
   const interested = contactClicks || interactions;
   const arrived = visitors || pageViews;

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { requireCapability } from "@/lib/admin-auth";
+import { formatMetricPageLabel } from "@/lib/metrics-summary";
 import { prisma } from "@/lib/prisma";
 
 function startOfDay(date: Date) {
@@ -107,7 +108,7 @@ export async function GET(request: Request) {
       event.eventName,
       event.eventCategory,
       event.eventLabel,
-      event.pagePath,
+      formatMetricPageLabel(event.pagePath),
       event.targetUrl,
       event.referrer,
       event.utmSource,
