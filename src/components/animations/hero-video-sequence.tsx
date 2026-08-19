@@ -2,7 +2,6 @@
 
 import { motion, useScroll, useTransform, useMotionValueEvent } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
-import Image from "next/image";
 
 interface HeroVideoSequenceProps {
   hero: {
@@ -23,7 +22,7 @@ const TOTAL_FRAMES = 240;
 export function HeroVideoSequence({ hero, whatsappUrl }: HeroVideoSequenceProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [images, setImages] = useState<HTMLImageElement[]>([]);
+  const imagesRef = useRef<HTMLImageElement[]>([]);
   const [imagesLoaded, setImagesLoaded] = useState(0);
 
   const { scrollYProgress } = useScroll({
@@ -47,32 +46,28 @@ export function HeroVideoSequence({ hero, whatsappUrl }: HeroVideoSequenceProps)
 
     for (let i = 1; i <= TOTAL_FRAMES; i++) {
       const img = new window.Image();
-      // Pad to 3 digits (e.g. 001, 010, 100)
       const paddedIndex = i.toString().padStart(3, "0");
       img.src = `/video-frames/ezgif-frame-${paddedIndex}.jpg`;
       
       img.onload = () => {
         loadedCount++;
         setImagesLoaded(loadedCount);
+        if (i === 1 && canvasRef.current) {
+          const context = canvasRef.current.getContext("2d");
+          if (context) {
+            context.drawImage(img, 0, 0, canvasRef.current.width, canvasRef.current.height);
+          }
+        }
       };
       
       loadedImages.push(img);
     }
-    setImages(loadedImages);
+    imagesRef.current = loadedImages;
   }, []);
-
-  // Draw initial frame if available
-  useEffect(() => {
-    if (images.length > 0 && images[0].complete && canvasRef.current) {
-      const context = canvasRef.current.getContext("2d");
-      if (context) {
-        context.drawImage(images[0], 0, 0, canvasRef.current.width, canvasRef.current.height);
-      }
-    }
-  }, [images]);
 
   // Draw current frame on scroll
   useMotionValueEvent(frameIndex, "change", (latest) => {
+    const images = imagesRef.current;
     if (images.length === 0 || !canvasRef.current) return;
     
     const index = Math.min(TOTAL_FRAMES - 1, Math.max(0, Math.floor(latest) - 1));
@@ -116,7 +111,7 @@ export function HeroVideoSequence({ hero, whatsappUrl }: HeroVideoSequenceProps)
         
         // Redraw current frame
         const index = Math.min(TOTAL_FRAMES - 1, Math.max(0, Math.floor(frameIndex.get()) - 1));
-        const img = images[index];
+        const img = imagesRef.current[index];
         if (img && img.complete) {
            const context = canvasRef.current.getContext("2d");
            if (context) {
@@ -146,7 +141,7 @@ export function HeroVideoSequence({ hero, whatsappUrl }: HeroVideoSequenceProps)
     handleResize();
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
-  }, [images, frameIndex]);
+  }, [frameIndex]);
 
   const primaryHeroUrl = hero.primaryButtonUrl || whatsappUrl;
   const secondaryHeroUrl = hero.secondaryButtonUrl || "https://instagram.com/lojacarroecasa"; // Fallback as we removed settings

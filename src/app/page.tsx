@@ -15,7 +15,6 @@ import {
   MessageCircle,
   ShieldCheck,
   Sparkles,
-  Star,
   Store,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -86,8 +85,6 @@ export default async function HomePage() {
   ]);
 
   const whatsappUrl = buildWhatsappUrl(settings.whatsappNumber, settings.whatsappMessage);
-  const primaryHeroUrl = hero.primaryButtonUrl || whatsappUrl;
-  const secondaryHeroUrl = hero.secondaryButtonUrl || settings.instagramUrl;
 
   return (
     <PublicShell>
@@ -199,7 +196,7 @@ export default async function HomePage() {
               />
             </FadeIn>
             <FadeIn direction="left" className="grid gap-3 sm:grid-cols-2">
-              {differentiators.map(([title, text, Icon], idx) => (
+              {differentiators.map(([title, text, Icon]) => (
                 <div key={title as string} className="group rounded-lg border border-white/12 bg-white/[0.08] p-4 shadow-[0_18px_50px_rgba(0,0,0,0.12)] backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:border-brand/50 hover:bg-white/[0.12]">
                   <Icon className="size-5 text-brand transition-transform duration-300 group-hover:scale-110" aria-hidden />
                   <h3 className="mt-3 text-base font-semibold">{title}</h3>
