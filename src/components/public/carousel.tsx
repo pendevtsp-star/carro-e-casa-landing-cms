@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -79,21 +80,32 @@ export function Carousel({ slides }: { slides: Slide[] }) {
             <div className="absolute inset-0 bg-gradient-to-r from-black/88 via-black/48 to-black/10" />
           </div>
         ))}
-        <div className="relative z-10 flex min-h-[360px] max-w-2xl flex-col justify-end p-5 sm:p-8 lg:p-10">
-          <p className="mb-3 w-fit rounded-full border border-white/18 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-brand">
-            Destaque
-          </p>
-          <h2 className="text-balance text-3xl font-semibold sm:text-4xl">
-            {active.title}
-          </h2>
-          <p className="mt-3 max-w-xl text-base leading-7 text-white/72">
-            {active.subtitle}
-          </p>
-          {active.buttonLabel && active.buttonUrl ? (
-            <Button href={active.buttonUrl} className="mt-5 w-fit">
-              {active.buttonLabel}
-            </Button>
-          ) : null}
+        <div className="relative z-10 flex min-h-[360px] max-w-2xl flex-col justify-end p-5 sm:p-8 lg:p-10 pointer-events-none">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={index}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.5, ease: "easeOut" }}
+              className="pointer-events-auto rounded-2xl border border-white/10 bg-black/40 p-6 backdrop-blur-md shadow-2xl sm:p-8"
+            >
+              <p className="mb-3 w-fit rounded-full border border-white/18 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-brand">
+                Destaque
+              </p>
+              <h2 className="text-balance text-3xl font-semibold text-white sm:text-4xl">
+                {active.title}
+              </h2>
+              <p className="mt-3 max-w-xl text-base leading-7 text-white/80">
+                {active.subtitle}
+              </p>
+              {active.buttonLabel && active.buttonUrl ? (
+                <Button href={active.buttonUrl} className="mt-5 w-fit shadow-lg shadow-brand/20 transition-all hover:shadow-brand/40 hover:-translate-y-0.5">
+                  {active.buttonLabel}
+                </Button>
+              ) : null}
+            </motion.div>
+          </AnimatePresence>
         </div>
       </div>
 
@@ -123,12 +135,22 @@ export function Carousel({ slides }: { slides: Slide[] }) {
                 key={slide.id ?? slide.title}
                 type="button"
                 className={cn(
-                  "h-1.5 rounded-full transition-all",
-                  slideIndex === index ? "w-9 bg-brand" : "w-4 bg-white/35",
+                  "relative h-1.5 overflow-hidden rounded-full transition-all",
+                  slideIndex === index ? "w-12 bg-white/20" : "w-4 bg-white/35 hover:bg-white/50",
                 )}
                 onClick={() => setIndex(slideIndex)}
                 aria-label={`Ir para slide ${slideIndex + 1}`}
-              />
+              >
+                {slideIndex === index && (
+                  <motion.div
+                    key={index} // Force remount on slide change
+                    className="absolute inset-y-0 left-0 bg-brand rounded-full"
+                    initial={{ width: "0%" }}
+                    animate={{ width: "100%" }}
+                    transition={{ duration: 6.5, ease: "linear" }}
+                  />
+                )}
+              </button>
             ))}
           </div>
         </>

@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowUpRight, Camera, Menu, MessageCircle, X } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
@@ -42,13 +42,47 @@ export function Header({
   appAccessLabel,
 }: HeaderProps) {
   const [open, setOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const [hidden, setHidden] = useState(false);
   const whatsappUrl = buildWhatsappUrl(whatsappNumber, whatsappMessage);
 
+  useEffect(() => {
+    let lastScrollY = window.scrollY;
+
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      
+      if (currentScrollY > lastScrollY + 10 && currentScrollY > 100) {
+        setHidden(true);
+      } else if (currentScrollY < lastScrollY - 10 || currentScrollY < 50) {
+        setHidden(false);
+      }
+      
+      setScrolled(currentScrollY > 20);
+      lastScrollY = currentScrollY;
+    };
+    
+    handleScroll();
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   return (
-    <header className="sticky top-0 z-50 border-b border-brand-dark/10 bg-background/88 backdrop-blur-xl">
+    <header
+      className={cn(
+        "sticky top-0 z-50 border-b transition-all duration-300 backdrop-blur-xl",
+        scrolled
+          ? "border-brand-dark/15 bg-background/95 shadow-md shadow-brand-dark/5 py-1"
+          : "border-brand-dark/10 bg-background/85 py-0",
+        hidden ? "-translate-y-full" : "translate-y-0"
+      )}
+    >
       <Container className="flex h-20 items-center justify-between gap-4">
-        <Link href="/#inicio" className="flex min-w-0 flex-1 items-center gap-3 lg:flex-none">
-          <span className="relative size-12 shrink-0 overflow-hidden rounded-full bg-brand">
+        <Link
+          href="/#inicio"
+          className="group flex min-w-0 flex-1 items-center gap-3 lg:flex-none"
+        >
+          <span className="relative size-12 shrink-0 overflow-hidden rounded-full bg-brand shadow-sm transition-transform duration-300 group-hover:scale-105">
             <Image
               src={logoUrl}
               alt={`Logo ${businessName}`}
@@ -63,19 +97,20 @@ export function Header({
             aria-label={businessName}
           >
             <span>Carro</span>
-            <span className="text-brand">&amp;</span>
+            <span className="text-brand transition-transform duration-300 group-hover:scale-125 inline-block mx-0.5">&amp;</span>
             <span>Casa</span>
           </span>
         </Link>
 
-        <nav className="hidden items-center gap-5 lg:flex" aria-label="Menu principal">
+        <nav className="hidden items-center gap-6 lg:flex" aria-label="Menu principal">
           {navItems.map(([label, href]) => (
             <Link
               key={href}
               href={href}
-              className="text-sm font-medium text-brand-dark/70 transition hover:text-brand-dark"
+              className="group relative text-sm font-medium text-brand-dark/75 transition-colors hover:text-brand-dark"
             >
               {label}
+              <span className="absolute -bottom-1 left-0 h-0.5 w-0 bg-brand transition-all duration-300 group-hover:w-full" />
             </Link>
           ))}
         </nav>
@@ -91,7 +126,7 @@ export function Header({
             target="_blank"
             rel="noopener noreferrer"
             aria-label="Abrir Instagram"
-            className="inline-flex h-10 min-w-12 items-center justify-center gap-1 rounded-md border border-brand-dark/15 bg-white px-3 text-brand-dark transition hover:border-brand-dark/35 hover:bg-brand/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+            className="inline-flex h-10 min-w-12 items-center justify-center gap-1 rounded-md border border-brand-dark/15 bg-white px-3 text-brand-dark transition duration-200 hover:border-brand-dark/35 hover:bg-brand/10 hover:-translate-y-0.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
           >
             <Camera aria-hidden className="size-4" />
             <ArrowUpRight aria-hidden className="size-3.5" />
@@ -103,18 +138,18 @@ export function Header({
         </div>
 
         <button
-          className="inline-flex size-11 items-center justify-center rounded-md border border-brand-dark/10 bg-white lg:hidden"
+          className="inline-flex size-11 items-center justify-center rounded-md border border-brand-dark/10 bg-white lg:hidden transition active:scale-95"
           type="button"
           aria-label={open ? "Fechar menu" : "Abrir menu"}
           onClick={() => setOpen((value) => !value)}
         >
-          {open ? <X className="size-5" /> : <Menu className="size-5" />}
+          {open ? <X className="size-5 text-brand-dark" /> : <Menu className="size-5 text-brand-dark" />}
         </button>
       </Container>
 
       <div
         className={cn(
-          "grid border-t border-brand-dark/10 bg-background transition-[grid-template-rows] lg:hidden",
+          "grid border-t border-brand-dark/10 bg-background/98 backdrop-blur-xl transition-[grid-template-rows] duration-300 lg:hidden shadow-lg",
           open ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
         )}
       >
@@ -124,7 +159,7 @@ export function Header({
               <Link
                 key={href}
                 href={href}
-                className="rounded-md px-2 py-3 text-base font-medium text-brand-dark"
+                className="rounded-md px-3 py-2.5 text-base font-medium text-brand-dark hover:bg-brand/10 transition"
                 onClick={() => setOpen(false)}
               >
                 {label}

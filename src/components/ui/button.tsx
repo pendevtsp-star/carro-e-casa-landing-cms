@@ -15,11 +15,11 @@ type ButtonProps = {
 
 const variants = {
   primary:
-    "bg-brand text-brand-dark shadow-[0_18px_45px_rgba(246,196,0,0.22)] hover:bg-[#ffd633]",
+    "bg-brand text-brand-dark shadow-[0_18px_45px_rgba(246,196,0,0.22)] hover:bg-[#ffd633] hover:shadow-[0_0_25px_rgba(246,196,0,0.45)] hover:-translate-y-0.5",
   secondary:
-    "border border-brand-dark/15 bg-white text-brand-dark hover:border-brand-dark/35 hover:bg-brand/10",
-  dark: "bg-brand-dark text-white hover:bg-black",
-  ghost: "text-brand-dark hover:bg-brand-dark/5",
+    "border border-brand-dark/15 bg-white text-brand-dark hover:border-brand-dark/45 hover:bg-brand/10 hover:shadow-sm hover:-translate-y-0.5",
+  dark: "bg-brand-dark text-white hover:bg-black hover:shadow-lg hover:-translate-y-0.5",
+  ghost: "text-brand-dark hover:bg-brand-dark/5 hover:text-brand-dark",
 };
 
 export function Button({
@@ -32,7 +32,7 @@ export function Button({
   disabled,
 }: ButtonProps) {
   const classes = cn(
-    "inline-flex h-12 items-center justify-center gap-2 rounded-md px-5 text-sm font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:pointer-events-none disabled:opacity-60",
+    "group/btn inline-flex h-12 items-center justify-center gap-2 rounded-md px-5 text-sm font-semibold transition-all duration-200 active:scale-[0.98] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:pointer-events-none disabled:opacity-60 [&>svg]:transition-transform [&>svg]:duration-200 group-hover/btn:[&>svg]:scale-110",
     variants[variant],
     className,
   );

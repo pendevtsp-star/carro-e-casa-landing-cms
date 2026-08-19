@@ -15,37 +15,51 @@ export function FAQAccordion({ items }: { items: FAQItem[] }) {
   const [open, setOpen] = useState(0);
 
   return (
-    <div className="divide-y divide-brand-dark/10 rounded-lg border border-brand-dark/10 bg-white">
+    <div className="space-y-3">
       {items.map((item, index) => {
         const isOpen = open === index;
         return (
-          <div key={item.id ?? item.question}>
+          <div
+            key={item.id ?? item.question}
+            className={cn(
+              "group overflow-hidden rounded-xl border bg-white transition-all duration-300",
+              isOpen
+                ? "border-brand/60 shadow-md ring-1 ring-brand/30"
+                : "border-brand-dark/10 shadow-sm hover:border-brand-dark/25 hover:shadow-md",
+            )}
+          >
             <button
               type="button"
-              className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left"
+              className="flex w-full items-center justify-between gap-4 p-5 text-left transition-colors"
               onClick={() => setOpen(isOpen ? -1 : index)}
               aria-expanded={isOpen}
             >
-              <span className="text-base font-semibold text-brand-dark">
+              <span className="text-base font-semibold text-brand-dark group-hover:text-black">
                 {item.question}
               </span>
-              <ChevronDown
+              <span
                 className={cn(
-                  "size-5 shrink-0 text-brand-dark/45 transition",
-                  isOpen && "rotate-180",
+                  "flex size-8 shrink-0 items-center justify-center rounded-lg border bg-background/80 transition-all duration-300",
+                  isOpen
+                    ? "border-brand bg-brand text-brand-dark rotate-180 shadow-sm"
+                    : "border-brand-dark/10 text-brand-dark/60 group-hover:border-brand/40 group-hover:text-brand-dark",
                 )}
-              />
+              >
+                <ChevronDown className="size-4 shrink-0" />
+              </span>
             </button>
             <div
               className={cn(
-                "grid transition-[grid-template-rows]",
+                "grid transition-[grid-template-rows] duration-300 ease-in-out",
                 isOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
               )}
             >
               <div className="overflow-hidden">
-                <p className="px-5 pb-4 text-sm leading-6 text-brand-dark/64">
-                  {item.answer}
-                </p>
+                <div className="border-t border-brand-dark/6 px-5 pt-3 pb-5">
+                  <p className="text-sm leading-relaxed text-brand-dark/70">
+                    {item.answer}
+                  </p>
+                </div>
               </div>
             </div>
           </div>

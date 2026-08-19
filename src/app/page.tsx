@@ -8,12 +8,14 @@ import {
   Camera,
   CheckCircle2,
   ClipboardList,
+  Clock,
   GraduationCap,
   Mail,
   MapPin,
   MessageCircle,
   ShieldCheck,
   Sparkles,
+  Star,
   Store,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -23,6 +25,8 @@ import { Carousel } from "@/components/public/carousel";
 import { CategoryCard } from "@/components/public/category-card";
 import { FAQAccordion } from "@/components/public/faq-accordion";
 import { GoogleReviewsSection } from "@/components/public/google-reviews-section";
+import { HeroVideoSequence } from "@/components/animations/hero-video-sequence";
+import { FadeIn } from "@/components/animations/fade-in";
 import { PublicShell } from "@/components/public/public-shell";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -88,88 +92,55 @@ export default async function HomePage() {
   return (
     <PublicShell>
       <main>
-        <section id="inicio" className="relative overflow-hidden bg-brand-dark text-white">
-          <div className="absolute inset-0">
-            <Image
-              src={hero.imageUrl}
-              alt={hero.imageAlt}
-              fill
-              sizes="100vw"
-              className="object-cover opacity-72"
-              priority
-            />
-            <div className="absolute inset-0 bg-gradient-to-r from-black via-black/72 to-black/20" />
-          </div>
-          <Container className="relative grid min-h-[calc(100svh-80px)] items-center py-20 lg:grid-cols-[1.05fr_0.95fr]">
-            <div className="max-w-3xl">
-              <div className="flex flex-wrap gap-3">
-                <span className="rounded-full border border-brand/30 bg-brand/15 px-4 py-2 text-sm font-semibold text-brand">
-                  {hero.badgeText}
-                </span>
-                <span className="rounded-full border border-white/18 bg-white/10 px-4 py-2 text-sm font-semibold text-white/82">
-                  {hero.highlightText}
-                </span>
-              </div>
-              <h1 className="mt-8 text-balance text-5xl font-semibold tracking-normal sm:text-6xl lg:text-7xl">
-                {hero.title}
-              </h1>
-              <p className="mt-6 max-w-2xl text-lg leading-8 text-white/74 sm:text-xl">
-                {hero.subtitle}
-              </p>
-              <div className="mt-9 flex flex-col gap-3 sm:flex-row">
-                <Button href={primaryHeroUrl} target="_blank">
-                  <MessageCircle className="size-4" aria-hidden />
-                  {hero.primaryButtonLabel}
-                </Button>
-                <Button href={secondaryHeroUrl} variant="secondary" target="_blank">
-                  <Camera className="size-4" aria-hidden />
-                  {hero.secondaryButtonLabel}
-                </Button>
-              </div>
-            </div>
-          </Container>
-        </section>
+        <HeroVideoSequence hero={hero} whatsappUrl={whatsappUrl} />
 
         <section className="bg-background py-16">
           <Container>
-            <Carousel slides={slides} />
+            <FadeIn>
+              <Carousel slides={slides} />
+            </FadeIn>
           </Container>
         </section>
 
         <section id="marcas" className="bg-white py-16">
           <Container>
-            <SectionTitle
-              align="center"
-              eyebrow="Marcas"
-              title="Marcas premium em destaque"
-              text="Trabalhamos com mais de 50 marcas para oferecer qualidade, performance e confiança em cada escolha."
-            />
-            <BrandCarousel brands={brands} />
+            <FadeIn>
+              <SectionTitle
+                align="center"
+                eyebrow="Marcas"
+                title="Marcas premium em destaque"
+                text="Trabalhamos com mais de 50 marcas para oferecer qualidade, performance e confiança em cada escolha."
+              />
+              <BrandCarousel brands={brands} />
+            </FadeIn>
           </Container>
         </section>
 
         <section id="produtos" className="bg-background py-16">
           <Container>
-            <SectionTitle
-              eyebrow="Produtos"
-              title="Soluções para cada cuidado"
-              text="Uma seleção objetiva para carros, casa, profissionais e quem valoriza acabamento de alto nível."
-            />
-            <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {categories.map((category) => (
-                <CategoryCard
-                  key={category.name}
-                  category={category}
-                  whatsappNumber={settings.whatsappNumber}
-                />
-              ))}
-            </div>
+            <FadeIn direction="up">
+              <SectionTitle
+                eyebrow="Produtos"
+                title="Soluções para cada cuidado"
+                text="Uma seleção objetiva para carros, casa, profissionais e quem valoriza acabamento de alto nível."
+              />
+              <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {categories.map((category, idx) => (
+                  <FadeIn key={category.name} delay={idx * 0.1}>
+                    <CategoryCard
+                      category={category}
+                      whatsappNumber={settings.whatsappNumber}
+                    />
+                  </FadeIn>
+                ))}
+              </div>
+            </FadeIn>
           </Container>
         </section>
 
         <section id="empresas" className="bg-white py-16">
           <Container className="grid gap-8 lg:grid-cols-[0.92fr_1.08fr] lg:items-center">
-            <div>
+            <FadeIn direction="right">
               <SectionTitle
                 eyebrow="Empresas"
                 title="Atendimento técnico para empresas e profissionais"
@@ -191,16 +162,18 @@ export default async function HomePage() {
                   Falar com comercial
                 </Button>
               </div>
-            </div>
-            <div className="grid gap-3 sm:grid-cols-2">
+            </FadeIn>
+            <FadeIn direction="left" className="grid gap-3 sm:grid-cols-2">
               {businessServices.map(([title, text, Icon]) => (
-                <Card key={title} className="p-4">
-                  <Icon className="size-5 text-brand-dark" aria-hidden />
-                  <h3 className="mt-3 text-base font-semibold text-brand-dark">{title}</h3>
-                  <p className="mt-1.5 text-sm leading-6 text-brand-dark/62">{text}</p>
+                <Card key={title} className="group p-4 transition-all duration-300 hover:-translate-y-1 hover:border-brand/60 hover:shadow-md">
+                  <div className="flex size-9 items-center justify-center rounded-md bg-brand/20 text-brand-dark transition-colors duration-300 group-hover:bg-brand">
+                    <Icon className="size-5" aria-hidden />
+                  </div>
+                  <h3 className="mt-3 text-base font-semibold text-brand-dark transition-colors duration-200 group-hover:text-black">{title}</h3>
+                  <p className="mt-1.5 text-sm leading-6 text-brand-dark/65">{text}</p>
                 </Card>
               ))}
-            </div>
+            </FadeIn>
           </Container>
         </section>
 
@@ -217,64 +190,102 @@ export default async function HomePage() {
             <div className="absolute inset-0 bg-brand-dark/8" />
           </div>
           <Container className="relative grid gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
-            <div>
+            <FadeIn direction="right">
               <SectionTitle
                 eyebrow="Sobre"
                 title={settings.businessName}
                 text={settings.institutionalText}
                 tone="inverse"
               />
-            </div>
-            <div className="grid gap-3 sm:grid-cols-2">
-              {differentiators.map(([title, text, Icon]) => (
-                <div key={title as string} className="rounded-lg border border-white/12 bg-white/[0.08] p-4 shadow-[0_18px_50px_rgba(0,0,0,0.12)] backdrop-blur-sm">
-                  <Icon className="size-5 text-brand" aria-hidden />
+            </FadeIn>
+            <FadeIn direction="left" className="grid gap-3 sm:grid-cols-2">
+              {differentiators.map(([title, text, Icon], idx) => (
+                <div key={title as string} className="group rounded-lg border border-white/12 bg-white/[0.08] p-4 shadow-[0_18px_50px_rgba(0,0,0,0.12)] backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:border-brand/50 hover:bg-white/[0.12]">
+                  <Icon className="size-5 text-brand transition-transform duration-300 group-hover:scale-110" aria-hidden />
                   <h3 className="mt-3 text-base font-semibold">{title}</h3>
-                  <p className="mt-1.5 text-sm leading-6 text-white/62">{text}</p>
+                  <p className="mt-1.5 text-sm leading-6 text-white/65">{text}</p>
                 </div>
               ))}
-            </div>
+            </FadeIn>
           </Container>
         </section>
 
         <section className="bg-brand py-12 text-brand-dark">
           <Container className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-            <div>
+            <FadeIn direction="right">
               <h2 className="text-balance text-3xl font-semibold">
                 Quer encontrar o produto ideal?
               </h2>
               <p className="mt-2 max-w-2xl text-base leading-7 text-brand-dark/72">
                 Fale com a equipe da Carro & Casa pelo WhatsApp e receba um atendimento direto e especializado.
               </p>
-            </div>
-            <Button href={whatsappUrl} variant="dark" target="_blank">
-              <MessageCircle className="size-4" aria-hidden />
-              Chamar no WhatsApp
-            </Button>
+            </FadeIn>
+            <FadeIn direction="left">
+              <Button href={whatsappUrl} variant="dark" target="_blank">
+                <MessageCircle className="size-4" aria-hidden />
+                Chamar no WhatsApp
+              </Button>
+            </FadeIn>
           </Container>
         </section>
 
         <GoogleReviewsSection setting={googleReviewSetting} reviews={googleReviews} />
 
         <section id="faq" className="bg-background py-16">
-          <Container className="grid gap-8 lg:grid-cols-[0.8fr_1.2fr]">
-            <div>
-              <SectionTitle
-                eyebrow="FAQ"
-                title="Dúvidas frequentes"
-                text="Respostas rápidas sobre atendimento, marcas e produtos."
-              />
-              <Button href="/faq" variant="secondary" className="mt-5">
-                Ver FAQ completo
-              </Button>
-            </div>
-            <FAQAccordion items={faqs.slice(0, 6)} />
+          <Container className="grid gap-8 lg:grid-cols-[0.85fr_1.15fr] lg:items-start">
+            <FadeIn direction="right" className="flex flex-col gap-6">
+              <div>
+                <SectionTitle
+                  eyebrow="FAQ"
+                  title="Dúvidas frequentes"
+                  text="Respostas rápidas sobre atendimento, marcas e produtos."
+                />
+                <Button href="/faq" variant="secondary" className="mt-4">
+                  Ver FAQ completo
+                </Button>
+              </div>
+
+              <Card className="p-5 border-brand-dark/10 bg-white shadow-sm">
+                <div className="flex items-center gap-3">
+                  <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-brand text-brand-dark shadow-sm">
+                    <MessageCircle className="size-5" aria-hidden />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-semibold text-brand-dark">Atendimento Direto</h4>
+                    <p className="text-xs text-brand-dark/60">Orientação técnica via WhatsApp</p>
+                  </div>
+                </div>
+                <p className="mt-3 text-xs leading-5 text-brand-dark/68">
+                  Não encontrou o que procurava? Fale diretamente com nossos consultores para escolher o produto ideal para a sua necessidade.
+                </p>
+                {settings.openingHours ? (
+                  <p className="mt-3 flex items-center gap-1.5 text-xs text-brand-dark/60 border-t border-brand-dark/8 pt-3">
+                    <Clock className="size-3.5 shrink-0 text-brand-dark/70" aria-hidden />
+                    <span>{settings.openingHours}</span>
+                  </p>
+                ) : null}
+                <Button
+                  href={buildWhatsappUrl(
+                    settings.whatsappNumber,
+                    "Olá! Tenho uma dúvida sobre os produtos e gostaria de orientação.",
+                  )}
+                  className="mt-4 w-full h-10 text-xs"
+                  target="_blank"
+                >
+                  <MessageCircle className="size-3.5" aria-hidden />
+                  Tirar dúvidas no WhatsApp
+                </Button>
+              </Card>
+            </FadeIn>
+            <FadeIn direction="left">
+              <FAQAccordion items={faqs.slice(0, 6)} />
+            </FadeIn>
           </Container>
         </section>
 
         <section id="contato" className="bg-white py-16">
           <Container className="grid gap-6 lg:grid-cols-[1fr_1fr]">
-            <div>
+            <FadeIn direction="right">
               <SectionTitle
                 eyebrow="Contato"
                 title="Atendimento direto pelos canais oficiais"
@@ -290,57 +301,73 @@ export default async function HomePage() {
                   Instagram
                 </Button>
               </div>
-            </div>
-            <Card className="p-5">
-              <div>
-                <h3 className="text-lg font-semibold text-brand-dark">Canais institucionais</h3>
-                <p className="mt-1 text-sm leading-6 text-brand-dark/58">
-                  Direcione sua mensagem para a área certa e mantenha o atendimento organizado.
-                </p>
-              </div>
-              <div className="mt-5 grid gap-3">
-                {institutionalContacts.map(([area, email]) => (
-                  <a
-                    key={email}
-                    href={`mailto:${email}`}
-                    className="group grid grid-cols-[2.5rem_1fr] gap-3 rounded-lg border border-brand-dark/8 bg-background/70 p-3 transition hover:border-brand/70 hover:bg-white"
-                  >
-                    <span className="flex size-10 items-center justify-center rounded-md bg-brand text-brand-dark">
-                      <Mail className="size-4" aria-hidden />
-                    </span>
-                    <span className="min-w-0">
-                      <span className="block text-sm font-semibold text-brand-dark">{area}</span>
-                      <span className="mt-0.5 block break-words text-xs text-brand-dark/62 group-hover:text-brand-dark sm:text-sm">
-                        {email}
+              
+              {settings.googleMapsUrl && settings.address ? (
+                <div className="mt-8 h-[250px] w-full overflow-hidden rounded-xl border border-brand-dark/10 shadow-sm">
+                  <iframe 
+                    src={`https://www.google.com/maps?q=${encodeURIComponent(settings.address)}&output=embed`}
+                    width="100%" 
+                    height="100%" 
+                    style={{ border: 0 }} 
+                    allowFullScreen 
+                    loading="lazy" 
+                    referrerPolicy="no-referrer-when-downgrade"
+                    title="Localização da Loja"
+                  />
+                </div>
+              ) : settings.googleMapsUrl ? (
+                <Link href={settings.googleMapsUrl} target="_blank" className="mt-8 inline-block font-semibold text-brand-dark underline decoration-brand decoration-2 underline-offset-4">
+                  Abrir localização no Google Maps
+                </Link>
+              ) : null}
+            </FadeIn>
+            <FadeIn direction="left">
+              <Card className="p-5">
+                <div>
+                  <h3 className="text-lg font-semibold text-brand-dark">Canais institucionais</h3>
+                  <p className="mt-1 text-sm leading-6 text-brand-dark/58">
+                    Direcione sua mensagem para a área certa e mantenha o atendimento organizado.
+                  </p>
+                </div>
+                <div className="mt-5 grid gap-3">
+                  {institutionalContacts.map(([area, email]) => (
+                    <a
+                      key={email}
+                      href={`mailto:${email}`}
+                      className="group grid grid-cols-[2.5rem_1fr] gap-3 rounded-lg border border-brand-dark/8 bg-background/70 p-3 transition hover:border-brand/70 hover:bg-white"
+                    >
+                      <span className="flex size-10 items-center justify-center rounded-md bg-brand text-brand-dark">
+                        <Mail className="size-4" aria-hidden />
                       </span>
-                    </span>
-                  </a>
-                ))}
-              </div>
-              <div className="mt-5 grid gap-4 border-t border-brand-dark/10 pt-5 text-sm leading-6 text-brand-dark/68">
-                {settings.address ? (
-                  <p className="flex gap-3">
-                    <MapPin className="mt-1 size-5 shrink-0 text-brand-dark" aria-hidden />
-                    <span>{settings.address}</span>
-                  </p>
-                ) : null}
-                {settings.openingHours ? (
-                  <p>
-                    <strong className="text-brand-dark">Horário:</strong> {settings.openingHours}
-                  </p>
-                ) : null}
-                {settings.email ? (
-                  <p>
-                    <strong className="text-brand-dark">E-mail geral:</strong> {settings.email}
-                  </p>
-                ) : null}
-                {settings.googleMapsUrl ? (
-                  <Link href={settings.googleMapsUrl} target="_blank" className="font-semibold text-brand-dark underline decoration-brand decoration-2 underline-offset-4">
-                    Abrir localização no Google Maps
-                  </Link>
-                ) : null}
-              </div>
-            </Card>
+                      <span className="min-w-0">
+                        <span className="block text-sm font-semibold text-brand-dark">{area}</span>
+                        <span className="mt-0.5 block break-words text-xs text-brand-dark/62 group-hover:text-brand-dark sm:text-sm">
+                          {email}
+                        </span>
+                      </span>
+                    </a>
+                  ))}
+                </div>
+                <div className="mt-5 grid gap-4 border-t border-brand-dark/10 pt-5 text-sm leading-6 text-brand-dark/68">
+                  {settings.address ? (
+                    <p className="flex gap-3">
+                      <MapPin className="mt-1 size-5 shrink-0 text-brand-dark" aria-hidden />
+                      <span>{settings.address}</span>
+                    </p>
+                  ) : null}
+                  {settings.openingHours ? (
+                    <p>
+                      <strong className="text-brand-dark">Horário:</strong> {settings.openingHours}
+                    </p>
+                  ) : null}
+                  {settings.email ? (
+                    <p>
+                      <strong className="text-brand-dark">E-mail geral:</strong> {settings.email}
+                    </p>
+                  ) : null}
+                </div>
+              </Card>
+            </FadeIn>
           </Container>
         </section>
       </main>

@@ -1,3 +1,4 @@
+import { FloatingWhatsapp } from "@/components/public/floating-whatsapp";
 import { Footer } from "@/components/public/footer";
 import { Header } from "@/components/public/header";
 import { getSiteSetting } from "@/lib/content";
@@ -28,6 +29,10 @@ export async function PublicShell({ children }: { children: React.ReactNode }) {
         appAccessEnabled={settings.appAccessEnabled}
         appAccessUrl={settings.appAccessUrl}
         appAccessLabel={settings.appAccessLabel}
+      />
+      <FloatingWhatsapp
+        whatsappNumber={settings.whatsappNumber}
+        whatsappMessage={settings.whatsappMessage}
       />
     </>
   );
