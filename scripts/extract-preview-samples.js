@@ -1,4 +1,4 @@
-const { execSync } = require('child_process');
+const { execFileSync } = require('child_process');
 const path = require('path');
 const fs = require('fs');
 
@@ -10,7 +10,7 @@ if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
 const timestamps = [0, 2, 4, 6, 7.5, 8.0, 8.3, 8.6, 9.5];
 timestamps.forEach((t, i) => {
   const outPath = path.join(outDir, `sample_${i}_${t}s.jpg`);
-  execSync(`ffmpeg -y -ss ${t} -i "${vid}" -vframes 1 -q:v 2 "${outPath}"`);
+  execFileSync('ffmpeg', ['-y', '-ss', String(t), '-i', vid, '-vframes', '1', '-q:v', '2', outPath]);
 });
 
 console.log('Sample extraction complete!');

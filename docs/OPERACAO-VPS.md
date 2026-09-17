@@ -14,6 +14,22 @@ Nao misture comandos deste projeto com o Lume Gestao. O Lume fica em outro diret
 
 ## Deploy
 
+O fluxo principal e o workflow `Deploy de producao`, disparado por push em `main`
+ou manualmente com `confirmar_producao=PUBLICAR`. A publicacao exige lint,
+TypeScript, testes, migracoes, build, Semgrep e Trivy aprovados. A VPS recebe a
+imagem pelo digest, com o commit registrado em `.release.env`.
+
+Antes da troca, o workflow salva banco, uploads e a configuracao da release em
+`/srv/apps/carro-e-casa/backups`. Em falha, restaura somente a imagem anterior;
+migracoes precisam continuar compativeis com ela. Nao rode seed em atualizacoes
+de uma loja existente: preserve o conteudo cadastrado no CMS.
+
+Os overrides de `deepmerge-ts` e `mysql2` em `package.json` corrigem dependencias
+fixadas pelo Prisma 7.10.0. Remova-os somente quando o Prisma usar versoes corrigidas
+e a auditoria, geracao do client e migracoes passarem sem esses overrides.
+
+Procedimento legado para instalacao inicial/build local na VPS:
+
 No servidor:
 
 ```bash

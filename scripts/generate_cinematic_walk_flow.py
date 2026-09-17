@@ -142,8 +142,12 @@ def build_tour():
             
     print("--- Compiling 1080p Master Video ---")
     video_out = os.path.join(project_dir, "public", "videos", "hero-tour-carro-e-casa.mp4")
-    cmd = f'ffmpeg -y -framerate 30 -i "{out_dir}\\ezgif-frame-%03d.jpg" -c:v libx264 -preset slow -crf 16 -pix_fmt yuv420p "{video_out}"'
-    subprocess.run(cmd, shell=True, check=True)
+    subprocess.run([
+        "ffmpeg", "-y", "-framerate", "30", "-i",
+        os.path.join(out_dir, "ezgif-frame-%03d.jpg"),
+        "-c:v", "libx264", "-preset", "slow", "-crf", "16",
+        "-pix_fmt", "yuv420p", video_out,
+    ], check=True)
     print("--- Video and Frames Generated Successfully! ---")
 
 if __name__ == "__main__":

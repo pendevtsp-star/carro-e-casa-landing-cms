@@ -18,12 +18,21 @@ concurrency:
 permissions:
   contents: read
   packages: write
+  security-events: write
 
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/carro-e-casa-web
 
 jobs:
+  security-semgrep:
+    if: github.event_name == 'push' || github.event.inputs.confirmar_producao == 'PUBLICAR'
+    uses: ./.github/workflows/security-semgrep.yml
+
+  security-trivy:
+    if: github.event_name == 'push' || github.event.inputs.confirmar_producao == 'PUBLICAR'
+    uses: ./.github/workflows/security-trivy.yml
+
   validate:
     name: Validar release
     runs-on: ubuntu-latest
@@ -58,9 +67,9 @@ jobs:
       NEXT_SERVER_ACTIONS_ENCRYPTION_KEY: ci-server-actions-key-at-least-thirty-two
       GOOGLE_TOKEN_ENCRYPTION_KEY: ci-google-token-key-at-least-thirty-two
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
 
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version: 24
           cache: npm
@@ -69,21 +78,24 @@ jobs:
       - run: npm run db:generate
       - run: npm run lint
       - run: npm run typecheck
+      - run: npm run test:security
+      - run: npm run test:metrics-summary
       - run: npm run db:deploy
       - run: npm run build
 
   publish-images:
     name: Publicar imagem imutavel
-    needs: validate
+    needs: [validate, security-semgrep, security-trivy]
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.version.outputs.value }}
+      digest: ${{ steps.image.outputs.digest }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
 
-      - uses: docker/setup-buildx-action@v3
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
 
-      - uses: docker/login-action@v3
+      - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
@@ -92,11 +104,13 @@ jobs:
       - id: version
         run: echo "value=${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
 
-      - uses: docker/build-push-action@v6
+      - id: image
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
         with:
           context: .
           file: Dockerfile
           push: true
+          labels: org.opencontainers.image.revision=${{ github.sha }}
           build-args: |
             NEXT_PUBLIC_SITE_URL=https://lojacarroecasa.com.br
             NEXT_PUBLIC_APP_ACCESS_URL=https://app.lojacarroecasa.com.br
@@ -111,9 +125,10 @@ jobs:
     runs-on: ubuntu-latest
     environment: production
     steps:
-      - uses: appleboy/ssh-action@v1.2.1
+      - uses: appleboy/ssh-action@8faa84277b88b6cd1455986f459aa66cf72bc8a3 # v1.2.1
         env:
           VERSION: ${{ needs.publish-images.outputs.version }}
+          IMAGE_DIGEST: ${{ needs.publish-images.outputs.digest }}
           GHCR_USERNAME: ${{ secrets.GHCR_USERNAME }}
           GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
         with:
@@ -121,19 +136,22 @@ jobs:
           port: ${{ secrets.VPS_PORT }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.DEPLOY_KEY }}
-          envs: VERSION,GHCR_USERNAME,GHCR_TOKEN
+          envs: VERSION,IMAGE_DIGEST,GHCR_USERNAME,GHCR_TOKEN
           timeout: 60s
           command_timeout: 15m
           script: |
-            set -euo pipefail
+            set -Eeuo pipefail
+            umask 077
 
             ROOT=/srv/apps/carro-e-casa
             APP="$ROOT/app"
             COMPOSE_PROJECT=carro-e-casa
-            IMAGE="ghcr.io/pendevtsp-star/carro-e-casa-web:${VERSION}"
+            IMAGE="ghcr.io/pendevtsp-star/carro-e-casa-web@${IMAGE_DIGEST}"
 
             [ -d "$APP" ] || { echo "[deploy] Diretorio nao encontrado: $APP"; exit 10; }
             cd "$APP"
+            exec 9> "$ROOT/deploy.lock"
+            flock -n 9 || { echo "[deploy] Outro deploy esta em andamento"; exit 13; }
             [ -f .env ] || { echo "[deploy] Arquivo .env nao encontrado em $APP"; exit 11; }
             [ -f docker-compose.yml ] || { echo "[deploy] docker-compose.yml nao encontrado em $APP"; exit 12; }
 
@@ -147,10 +165,27 @@ jobs:
             mkdir -p "$ROOT/backups"
             timestamp=$(date -u +%Y%m%dT%H%M%SZ)
             backup="$ROOT/backups/predeploy-${timestamp}-${VERSION}.sql.gz"
+            previous_release="$ROOT/backups/release-${timestamp}-${VERSION}.env"
+            previous_image=$(docker inspect carro-e-casa-web-1 --format '{{.Config.Image}}')
+            cp .release.env "$previous_release"
 
             echo "[deploy] Criando backup em $backup"
             docker compose -p "$COMPOSE_PROJECT" exec -T db pg_dump -U carro_casa -d carro_casa | gzip > "$backup"
             test -s "$backup"
+            gzip -t "$backup"
+            uploads_backup="$ROOT/backups/uploads-${timestamp}-${VERSION}.tar.gz"
+            docker compose -p "$COMPOSE_PROJECT" exec -T web tar -czf - -C /app/uploads . > "$uploads_backup"
+            tar -tzf "$uploads_backup" >/dev/null
+
+            rollback() {
+              result=$?
+              trap - ERR
+              echo "[deploy] Falha; restaurando a imagem anterior"
+              cp "$previous_release" .release.env
+              CARRO_E_CASA_WEB_IMAGE="$previous_image" docker compose -p "$COMPOSE_PROJECT" --env-file .env --env-file .release.env -f docker-compose.yml -f docker-compose.ghcr.yml up -d --no-deps web
+              exit "$result"
+            }
+            trap rollback ERR
 
             cat > .release.env <<EOF
             CARRO_E_CASA_WEB_IMAGE=${IMAGE}
@@ -162,7 +197,8 @@ jobs:
             compose="docker compose -p $COMPOSE_PROJECT --env-file .env --env-file .release.env -f docker-compose.yml -f docker-compose.ghcr.yml"
             $compose pull web
             $compose run --rm --no-deps web npm run db:deploy
-            $compose up -d --no-deps --remove-orphans web
+            $compose up -d --no-deps web
+            [ "$(docker inspect carro-e-casa-web-1 --format '{{.Config.Image}}')" = "$IMAGE" ]
 
             wait_for_url() {
               name="$1"
@@ -183,6 +219,7 @@ jobs:
             wait_for_url "empresas" "https://empresas.lojacarroecasa.com.br/"
             wait_for_url "admin login" "https://lojacarroecasa.com.br/admin/login"
             $compose ps
+            trap - ERR
 
   notify-telegram:
     name: Notificar resultado no Telegram
