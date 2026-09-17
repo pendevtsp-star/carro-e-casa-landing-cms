@@ -28,6 +28,9 @@ Os overrides de `deepmerge-ts` e `mysql2` em `package.json` corrigem dependencia
 fixadas pelo Prisma 7.10.0. Remova-os somente quando o Prisma usar versoes corrigidas
 e a auditoria, geracao do client e migracoes passarem sem esses overrides.
 
+O container de producao usa Node diretamente, sem npm/npx. Isso evita carregar
+o gerenciador de pacotes e suas dependencias vulneraveis no ambiente de execucao.
+
 Procedimento legado para instalacao inicial/build local na VPS:
 
 No servidor:
@@ -37,8 +40,8 @@ cd /srv/apps/carro-e-casa/app
 git pull --ff-only
 docker compose -p carro-e-casa build web
 docker compose -p carro-e-casa up -d web
-docker compose -p carro-e-casa exec -T web npx prisma migrate deploy
-docker compose -p carro-e-casa exec -T web npm run db:seed
+docker compose -p carro-e-casa exec -T web node ./node_modules/prisma/build/index.js migrate deploy
+docker compose -p carro-e-casa exec -T web node ./node_modules/tsx/dist/cli.mjs prisma/seed.ts
 docker compose -p carro-e-casa ps
 ```
 

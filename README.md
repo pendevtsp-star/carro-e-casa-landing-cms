@@ -100,8 +100,8 @@ docker compose up -d --build
 4. Aplique migrações e seed dentro do container:
 
 ```bash
-docker compose exec web npm run db:deploy
-docker compose exec web npm run db:seed
+docker compose exec web node ./node_modules/prisma/build/index.js migrate deploy
+docker compose exec web node ./node_modules/tsx/dist/cli.mjs prisma/seed.ts
 ```
 
 Uploads ficam no volume `uploads_data`, montado em `/app/uploads`.

@@ -196,7 +196,7 @@ jobs:
 
             compose="docker compose -p $COMPOSE_PROJECT --env-file .env --env-file .release.env -f docker-compose.yml -f docker-compose.ghcr.yml"
             $compose pull web
-            $compose run --rm --no-deps web npm run db:deploy
+            $compose run --rm --no-deps web node ./node_modules/prisma/build/index.js migrate deploy
             $compose up -d --no-deps web
             [ "$(docker inspect carro-e-casa-web-1 --format '{{.Config.Image}}')" = "$IMAGE" ]
 
